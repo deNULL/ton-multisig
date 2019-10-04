@@ -1,5 +1,17 @@
 ;; Simple wallet smart contract
 
+(int, int, int, int, int, cell) unpack_request(req, n) {
+  var (req_seqno, req_expiry, req_mode, req_sigcount, req_signatures, req_message) = (
+    req~load_uint(32),
+    req~load_uint(32),
+    req~load_uint(8),
+    req~load_uint(8),
+    req~load_uint(n),
+    req~load_ref()
+  );
+  return (req_seqno, req_expiry, req_mode, req_sigcount, req_signatures, req_message);
+}
+
 () recv_internal(slice in_msg) impure {
   ;; do nothing for internal messages
 }
@@ -48,10 +60,9 @@
     if (f) {
       var (req_signs, req_body) = (request~load_dict(), request~load_ref());
       var req_body_slice = req_body.begin_parse();
-      var (_, req_expiry, req_mode) = (
+      var (_, req_expiry) = (
         req_body_slice~load_uint(32),
-        req_body_slice~load_uint(32),
-        req_body_slice~load_uint(8)
+        req_body_slice~load_uint(32)
       );
       if (req_expiry < now()) {
         ;; TODO: not sure if we are allowed to remove entries while iterating
@@ -64,33 +75,43 @@
   cs~touch();
   while (cs.slice_refs()) {
     ;;var (req_expiry, req_mode) = (cs~load_uint(8), cs~load_uint(32));
-    var req_body = cs~load_ref();
-    var req_hash = cell_hash(req_body);
+    var (existing, req_hash, req_seqno, req_expiry, req_mode, req_sigcount, req_signatures) = (0, 0, 0, 0, 0, 0, 0);
+    var (req_body, req_message) = (begin_cell().end_cell(), begin_cell().end_cell());
+
+    if (cs.slice_bits()) {
+      existing = -1;
+      req_hash = cs~load_uint(256);
+    } else {
+      var req_body = cs~load_ref();
+      req_hash = cell_hash(req_body);
+
+      var req_body_slice = req_body.begin_parse();
+      (req_seqno, req_expiry, req_mode) = (
+        req_body_slice~load_uint(32),
+        req_body_slice~load_uint(32),
+        req_body_slice~load_uint(8)
+      );
+      req_message = req_body_slice~load_ref();
+    }
+
     var req_new_signs = cs~load_dict();
 
     ;; validate expiry
-    var req_body_slice = req_body.begin_parse();
-    var (req_seqno, req_expiry, req_mode) = (
-      req_body_slice~load_uint(32),
-      req_body_slice~load_uint(32),
-      req_body_slice~load_uint(8)
-    );
-
     throw_if(36, req_expiry < now());
 
     ;; check if this request is already pending
     var (req_data, found) = pending.udict_get?(256, req_hash);
-    var req_sign_total = 0;
-    var req_signs = new_dict();
     if (found) {
-      req_sign_total = req_data~load_uint(8);
-      req_signs = req_data~load_dict();
+      (req_seqno, req_expiry, req_mode, req_sigcount, req_signatures, req_message) = unpack_request(req_data, param_n);
     } else {
+      ;; we provided only the hash, but the body was not found among pending requests
+      ;; (already completed/expired?)
+      throw_unless(37, existing);
       ;; request should contain actual seqno of this contract,
       ;; but it's validate only when the first batch of signatures arrive
       ;; (it cannot increase, because it's included in signed part,
       ;; and after the first accepted message it won't be equal to the contract's seqno)
-      throw_unless(37, req_seqno == stored_seqno);
+      throw_unless(38, req_seqno == stored_seqno);
     }
 
     ;; merge new signatures into req_signs
@@ -100,35 +121,38 @@
       if (f) {
         var (owner, owner_found) = owners.udict_get?(256, pubkey);
         ;; this signature does not belong to any owner
-        throw_unless(38, owner_found);
+        throw_unless(39, owner_found);
 
         ;; check that signature is valid
         var req_signature = sign~load_bits(512);
-        throw_unless(39, check_signature(req_hash, req_signature, pubkey));
+        throw_unless(40, check_signature(req_hash, req_signature, pubkey));
 
         ;; check that this request was not signed by this owner previously
         ;; (to prevent adding same signature over and over again)
         var owner_idx = owner~load_uint(8);
-        var (_, sign_found) = req_signs.udict_get?(8, owner_idx);
-        ifnot (sign_found) {
-          req_sign_total += 1;
-          req_signs.udict_set_builder(8, owner_idx, begin_cell());
+        var owner_mask = 1 << owner_idx;
+        ifnot (req_signatures & owner_mask) {
+          req_sigcount += 1;
+          req_signatures = req_signatures | owner_mask;
         }
       }
     } until (~ f);
 
-    if (req_sign_total >= param_k) {
+    if (req_sigcount >= param_k) {
       ;; enough signatures to send this message
-      send_raw_message(req_body_slice~load_ref(), req_mode);
+      send_raw_message(req_message, req_mode);
 
       ;; make sure it's removed
       pending~udict_delete_get?(256, req_hash);
     } else {
       ;; store message as pending request
       pending~udict_set_builder(256, req_hash, begin_cell()
-        .store_uint(req_sign_total, 8)
-        .store_dict(req_signs)
-        .store_ref(req_body));
+        .store_uint(req_seqno, 32)
+        .store_uint(req_expiry, 32)
+        .store_uint(req_mode, 8)
+        .store_uint(req_sigcount, 8)
+        .store_uint(req_signatures, param_n)
+        .store_ref(req_message));
     }
   }
   cs.end_parse();
@@ -143,14 +167,6 @@
       .store_dict(pending)
     .end_cell()
   );
-}
-
-(int, int, int, cell, cell) unpack_request(request) {
-  var (req_signs, req_body) = (request~load_dict(), request~load_ref());
-  var req_body_slice = req_body.begin_parse();
-  var (req_seqno, req_expiry, req_mode) = (req_body_slice~load_uint(32), req_body_slice~load_uint(32), req_body_slice~load_uint(8));
-  var req_msg = req_body_slice~load_ref();
-  return (req_seqno, req_expiry, req_mode, req_msg, req_signs);
 }
 
 _ unpack_signatures(signs) {
@@ -210,6 +226,7 @@ _ owners() method_id {
 
 _ pending() method_id {
   var ds = get_data().begin_parse();
+  var param_n = ds.skip_bits(48).preload_uint(8);
   ds~load_dict();
   var pending = ds~load_dict();
   if (pending.null?()) {
@@ -221,8 +238,8 @@ _ pending() method_id {
   do {
     (req_hash, var request, var f) = pending.udict_get_prev?(256, req_hash);
     if (f) {
-      var (_, req_expiry, req_mode, req_msg, req_signs) = unpack_request(request);
-      l = cons(tuple4(req_expiry, req_mode, req_msg, unpack_signatures(req_signs)), l);
+      var (_, req_expiry, req_mode, _, req_signatures, _) = unpack_request(request, param_n);
+      l = cons(tuple4(req_hash, req_expiry, req_mode, req_signatures), l);
     }
   } until (~ f);
   return l;
@@ -232,6 +249,7 @@ _ pending() method_id {
 
 _ pending_signed_by(int signatory_pubkey, int filter_signed) method_id {
   var ds = get_data().begin_parse();
+  var param_n = ds.skip_bits(48).preload_uint(8);
   var owners = ds~load_dict();
   var (owner, owner_found) = owners.udict_get?(256, signatory_pubkey);
   ;; ifnot (owner_found) {
@@ -239,6 +257,7 @@ _ pending_signed_by(int signatory_pubkey, int filter_signed) method_id {
   ;;}
   throw_unless(36, owner_found);
   var owner_idx = owner~load_uint(8);
+  var owner_mask = 1 << owner_idx;
 
   var pending = ds~load_dict();
   if (pending.null?()) {
@@ -250,11 +269,11 @@ _ pending_signed_by(int signatory_pubkey, int filter_signed) method_id {
   do {
     (req_hash, var request, var f) = pending.udict_get_prev?(256, req_hash);
     if (f) {
-      var (_, req_expiry, req_mode, req_msg, req_signs) = unpack_request(request);
-      var (_, sign_found) = req_signs.udict_get?(8, owner_idx);
+      var (_, req_expiry, req_mode, _, req_signatures, _) = unpack_request(request, param_n);
+      var sign_found = (req_signatures & owner_mask) != 0;
 
       if (filter_signed == sign_found) {
-        l = cons(tuple4(req_expiry, req_mode, req_msg, unpack_signatures(req_signs)), l);
+        l = cons(tuple4(req_hash, req_expiry, req_mode, req_signatures), l);
       }
     }
   } until (~ f);
