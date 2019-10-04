@@ -1,0 +1,8 @@
+#!/usr/bin/env fift -s
+"TonUtil.fif" include
+"Asm.fif" include
+
+{ ."Usage: " @' $0 type ." <n> [<filename-base>]" cr
+  ."Adds n private keys to an existing wallet creation code, with private keys saved to or loaded from <filename-base>-<i>.pk" cr
+  ."('new-wallet-<i>.pk' by default)" cr 1 halt
+} : usage

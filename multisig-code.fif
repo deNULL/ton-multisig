@@ -1,0 +1,422 @@
+// automatically generated from `smartcont/stdlib.fc` `my/multisig-code.fc` 
+PROGRAM{
+  DECLPROC recv_internal
+  DECLPROC recv_external
+  DECLPROC unpack_request
+  DECLPROC unpack_signatures
+  85143 DECLMETHOD seqno
+  126687 DECLMETHOD pending_count
+  107113 DECLMETHOD param_n
+  127692 DECLMETHOD param_k
+  84885 DECLMETHOD owners
+  126129 DECLMETHOD pending
+  75417 DECLMETHOD pending_signed_by
+  recv_internal PROC:<{
+    DROP
+  }>
+  recv_external PROC:<{
+    9 PUSHPOW2
+    LDSLICEX
+    DUP
+    32 LDU
+    32 LDU
+    NOW
+    s1 s2 XCHG
+    LESS
+    35 THROWIF
+    256 LDU
+    c4 PUSH
+    CTOS
+    32 LDU
+    16 LDU
+    8 LDU
+    8 LDU
+    s7 s4 XCPU
+    EQUAL
+    33 THROWIFNOT
+    s0 s7 XCHG
+    HASHSU
+    s0 s8 s5 XC2PU
+    CHKSIGNU
+    34 THROWIFNOT
+    s0 s4 XCHG
+    LDDICT
+    LDDICT
+    ENDS
+    s4 s1 XCPU
+    8 PUSHPOW2
+    DICTUGET
+    NULLSWAPIFNOT
+    NIP
+    35 THROWIFNOT
+    ACCEPT
+    s3 PUSH
+    ISNULL
+    IF:<{
+      s3 POP
+      NEWDICT
+    }>ELSE<{
+      s0 s3 XCHG
+    }>
+    -1 PUSHINT
+    UNTIL:<{
+      OVER
+      8 PUSHPOW2
+      DICTUGETNEXT
+      NULLSWAPIFNOT
+      NULLSWAPIFNOT
+      DUP
+      IF:<{
+        s0 s2 XCHG
+        LDDICT
+        NIP
+        LDREF
+        DROP
+        CTOS
+        32 LDU
+        DROP
+        NOW
+        LESS
+        IF:<{
+          8 PUSHPOW2
+          s1 s3 s3 PUXC2
+          DICTUDELGET
+          NULLSWAPIFNOT
+          2DROP
+        }>ELSE<{
+          s0 s2 XCHG
+        }>
+      }>ELSE<{
+        2SWAP
+        DROP
+      }>
+      SWAP
+      NOT
+      s1 s2 XCHG
+    }>
+    DROP
+    s0 s2 XCHG
+    WHILE:<{
+      DUP
+      SREFS
+    }>DO<{
+      LDREF
+      OVER
+      HASHCU
+      SWAP
+      LDDICT
+      s3 PUSH
+      CTOS
+      32 LDU
+      8 LDU
+      NOW
+      s1 s3 XCHG
+      LESS
+      IFNOT:<{
+        s4 s7 PUSH2
+        8 PUSHPOW2
+        DICTUGET
+        NULLSWAPIFNOT
+        0 PUSHINT
+        NEWDICT
+        s0 s2 XCHG
+        IF:<{
+          2DROP
+          8 LDU
+          LDDICT
+          DROP
+        }>ELSE<{
+          s2 POP
+        }>
+        -1 PUSHINT
+        UNTIL:<{
+          s6 PUSH
+          8 PUSHPOW2
+          DICTUGETNEXT
+          NULLSWAPIFNOT
+          NULLSWAPIFNOT
+          DUP
+          IF:<{
+            s1 s13 PUSH2
+            8 PUSHPOW2
+            DICTUGET
+            NULLSWAPIFNOT
+            36 THROWIFNOT
+            s0 s3 XCHG
+            9 PUSHPOW2
+            LDSLICEX
+            DROP
+            s10 s0 s2 PUSH3
+            CHKSIGNU
+            NIP
+            37 THROWIFNOT
+            s0 s2 XCHG
+            8 LDU
+            DROP
+            s0 s3 PUSH2
+            8 PUSHINT
+            DICTUGET
+            NULLSWAPIFNOT
+            NIP
+            NIP
+            IFNOT:<{
+              s0 s3 XCHG
+              INC
+            }>ELSE<{
+              s0 s3 XCHG
+            }>
+          }>ELSE<{
+            s4 s2 XCHG2
+            DROP
+          }>
+          SWAP
+          NOT
+          s1 s3 XCHG
+        }>
+        DROP
+        s5 POP
+        s0 s11 PUSH2
+        GEQ
+        IF:<{
+          DROP
+          s3 POP
+          s4 POP
+          s0 s3 XCHG
+          LDREF
+          DROP
+          SWAP
+          SENDRAWMSG
+          s0 s3 XCHG2
+          8 PUSHPOW2
+          DICTUDELGET
+          NULLSWAPIFNOT
+          2DROP
+        }>ELSE<{
+          NIP
+          NIP
+          NEWC
+          8 STU
+          s1 s2 XCHG
+          STDICT
+          s1 s3 XCHG
+          STREF
+          s0 s1 s4 XCHG3
+          8 PUSHPOW2
+          DICTUSETB
+        }>
+      }>ELSE<{
+        s2 s7 XCHG
+        s2 s5 XCHG
+        5 BLKDROP
+      }>
+      s0 s2 XCHG
+    }>
+    ENDS
+    INC
+    NEWC
+    32 STU
+    s1 s3 XCHG
+    16 STU
+    s1 s4 XCHG
+    8 STU
+    s1 s2 XCHG
+    8 STU
+    s1 s2 XCHG
+    STDICT
+    STDICT
+    ENDC
+    c4 POP
+  }>
+  unpack_request PROC:<{
+    LDDICT
+    LDREF
+    DROP
+    CTOS
+    32 LDU
+    8 LDU
+    LDREF
+    DROP
+    3 ROLL
+  }>
+  unpack_signatures PROC:<{
+    PUSHNULL
+    256 PUSHPOW2DEC
+    UNTIL:<{
+      s2 PUSH
+      8 PUSHINT
+      DICTUGETPREV
+      NULLSWAPIFNOT
+      NULLSWAPIFNOT
+      s2 POP
+      OVER
+      IF:<{
+        s0 s2 PUXC
+        CONS
+      }>ELSE<{
+        s0 s2 XCHG
+      }>
+      SWAP
+      NOT
+      s1 s2 XCHG
+    }>
+    DROP
+    NIP
+  }>
+  seqno PROC:<{
+    c4 PUSH
+    CTOS
+    32 PLDU
+  }>
+  pending_count PROC:<{
+    c4 PUSH
+    CTOS
+    32 PUSHINT
+    SDSKIPFIRST
+    16 PLDU
+  }>
+  param_n PROC:<{
+    c4 PUSH
+    CTOS
+    48 PUSHINT
+    SDSKIPFIRST
+    8 PLDU
+  }>
+  param_k PROC:<{
+    c4 PUSH
+    CTOS
+    56 PUSHINT
+    SDSKIPFIRST
+    8 PLDU
+  }>
+  owners PROC:<{
+    c4 PUSH
+    CTOS
+    LDDICT
+    DROP
+    PUSHNULL
+    256 PUSHPOW2DEC
+    UNTIL:<{
+      s2 PUSH
+      8 PUSHPOW2
+      DICTUGETPREV
+      NULLSWAPIFNOT
+      NULLSWAPIFNOT
+      DUP
+      IF:<{
+        s0 s2 XCHG
+        8 PLDU
+        s1 s(-1) PUXC
+        PAIR
+        s0 s3 XCHG2
+        CONS
+      }>ELSE<{
+        2SWAP
+        DROP
+      }>
+      SWAP
+      NOT
+      s1 s2 XCHG
+    }>
+    DROP
+    NIP
+  }>
+  pending PROC:<{
+    c4 PUSH
+    CTOS
+    LDDICT
+    NIP
+    LDDICT
+    DROP
+    DUP
+    ISNULL
+    IFJMP:<{
+      DROP
+      PUSHNULL
+    }>
+    PUSHNULL
+    256 PUSHPOW2DEC
+    UNTIL:<{
+      s2 PUSH
+      8 PUSHPOW2
+      DICTUGETPREV
+      NULLSWAPIFNOT
+      NULLSWAPIFNOT
+      DUP
+      IF:<{
+        s0 s2 XCHG
+        unpack_request CALLDICT
+        unpack_signatures CALLDICT
+        4 TUPLE
+        s0 s3 XCHG2
+        CONS
+      }>ELSE<{
+        2SWAP
+        DROP
+      }>
+      SWAP
+      NOT
+      s1 s2 XCHG
+    }>
+    DROP
+    NIP
+  }>
+  pending_signed_by PROC:<{
+    c4 PUSH
+    CTOS
+    LDDICT
+    s3 s3 XCHG2
+    8 PUSHPOW2
+    DICTUGET
+    NULLSWAPIFNOT
+    36 THROWIFNOT
+    8 LDU
+    DROP
+    s0 s2 XCHG
+    LDDICT
+    DROP
+    DUP
+    ISNULL
+    IFJMP:<{
+      3 BLKDROP
+      PUSHNULL
+    }>
+    PUSHNULL
+    256 PUSHPOW2DEC
+    UNTIL:<{
+      s2 PUSH
+      8 PUSHPOW2
+      DICTUGETPREV
+      NULLSWAPIFNOT
+      NULLSWAPIFNOT
+      DUP
+      IF:<{
+        s0 s2 XCHG
+        unpack_request CALLDICT
+        s9 s0 PUSH2
+        8 PUSHINT
+        DICTUGET
+        NULLSWAPIFNOT
+        NIP
+        s9 s(-1) PUXC
+        EQUAL
+        IF:<{
+          unpack_signatures CALLDICT
+          4 TUPLE
+          s0 s3 XCHG2
+          CONS
+        }>ELSE<{
+          s4 s6 XCHG
+          4 BLKDROP
+        }>
+      }>ELSE<{
+        2SWAP
+        DROP
+      }>
+      SWAP
+      NOT
+      s1 s2 XCHG
+    }>
+    s1 s4 XCHG
+    4 BLKDROP
+  }>
+}END>c

@@ -1,0 +1,8 @@
+#!/usr/bin/env fift -s
+"TonUtil.fif" include
+"Asm.fif" include
+
+{ ."Usage: " @' $0 type ." <query-filename> <key-filename-base> [<key-filename-base>...]" cr
+  ."Appends new signatures to a (not yet sent) query to a multisig wallet." cr
+  ."It's recommended to check that query is correct first via multisig-show-order.fif" cr 1 halt
+} : usage

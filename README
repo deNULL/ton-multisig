@@ -1,0 +1,82 @@
+liteclient-build/crypto/func -o"my/multisig-code.fif" -P smartcont/stdlib.fc my/multisig-code.fc 
+
+
+Создание:
+
+multisig.fif - создаем кошелек с n ключами, k требуется
+NB:
+нужно сформировать не только StateInit, но видимо и корректное тело сообщения, которое сразу обработается
+
+
+multisig-append-keys.fif - добавляем ключ в код создания кошелька (TODO)
+
+
+
+
+Apart from this basic functionality of the smart contract, you have to implement 
+
+= get-methods that list all pending (partially signed) orders
+orders
+
+= get-methods that list all pending orders signed or not signed by a particular public key.
+signedBy
+
+
+Your interface Fift scripts should help the user:
+
+= to create (BoC files with serialized) external messages with completely new orders (similarly to `wallet.fif` used by the simple wallet smart contract)
+
+multisig-new-order.fif - создаем запрос на задание
+
+
+= to extract and show the internal message (especially its destination address and value) and the list of signatures from a previously serialized external messages (loaded from a file)
+
+multisig-show-order.fif - показать данные в запросе
+
+
+= to add new signatures to such external messages using a local private key file (so that the holder of one private key might create an external message and send it by e-mail to the holder of another private key, who could add the second signature to the next holder and so on until the necessary amount of signatures is collected offline)
+
+multisig-sign-order.fif - добавляем подпись в запрос
+
+
+= to merge two external messages with the same body, but with different signature sets, into one external message with the union of these signature sets,
+
+multisig-merge-orders.fif - объединить два запроса на одинаковое задание
+
+
+= to create and sign a "new order" external message corresponding to a partially signed order recovered from the current state of the blockchain using one of the get-methods indicated above.
+
+multisig-sign-sent-order.fif - импортируем существующее задание и делаем запрос на добавление подписи в него
+
+
+
+
+Структура data:
+
+32 бита: seqno
+16 бит: pending, число запросов, ожидающих подписей
+8 бит: n, число ключей в контракте
+8 бит: k, число ключей, необходимых для отправки запроса
+
+dict (публичный ключ => его 8 бит индекс)
+dict (индекс запроса => инфо)
+  для каждого запроса:
+  8 бит: s, число подписей
+  ref: тело запроса + mode (как в обычном кошельке) + expire_at
+  dict (8 бит индекс ключа => 512-битная подпись)
+
+
+Issues:
+как использовать Bytes в кач-ве ключей dict?
+как использовать Integer в кач-ве значений?
+
+
+Сообщение:
+
+512 бит подпись
+32 бита: seqno
+32 бита: valid_until
+256 бит пуб ключ того, кто подписал _сообщение_ <- по факту тут будет ключ того, кто последним добавлял свою подпись
+8 бит: число подписей запроса // 0 => нет запроса
+ref: тело запроса + mode (как в обычном кошельке) + expire_at
+dict: 256-бит пубключ => 512-бит подпись запроса

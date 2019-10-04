@@ -1,0 +1,97 @@
+#!/usr/bin/env fift -s
+"TonUtil.fif" include
+"Asm.fif" include
+
+{ ."Usage: " @' $0 type ." <workchain-id> <n> [<k> <filename-base>]" cr
+  ."Creates a new multisig wallet with n keypairs and requiring at least k signatures, with private keys saved to or loaded from <filename-base>-<i>.pk" cr
+  ."('new-wallet-<i>.pk' by default)" cr 1 halt
+} : usage
+
+$# dup 2 < swap 4 > or ' usage if // allow 2 to 4 arguments
+
+$1 parse-workchain-id =: wc
+$2 (number) 1- abort"n must be an integer number" =: n
+def? $3 { @' $3 (number) 1- abort"k must be an integer number" } { n } cond constant k
+def? $4 { @' $4 } { "new-multisig-wallet" } cond constant file-base
+
+."Creating new wallet in workchain " wc . cr
+
+// Import the actual smart contract code
+"multisig-code.fif" include
+
+// .s -> code
+
+// Data:
+<b 0 32 u, // seqno
+  0 32 u,
+  n 8 u,
+  k 8 u,
+  1 dictnew 
+  {
+   over <b swap 8 u, // Converting current index to builder (because dict does not store simple ints)
+   file-base +"-" 3 pick (.) $+ +".pk" load-generate-keypair // Loading/saving pubkey and privkey
+   // Stack: code:cell data:builder index:int keylist:dict builder pubkey:bytes privkey:bytes
+   drop // TODO: store private key somewhere
+   256 B>u@ // Converting pubkey to int (why dict can't use Bytes as keys???)
+   // udict requires order: value(builder) key(pubkey) dict(keylist) n=256
+   rot 256 b>udict!
+   0= abort"Unable to store public key in the contract data"
+   // Stack: code:cell data:builder index:int keylist:dict
+   swap 1+ swap // Increase index
+  } n times
+  swap drop
+  ref, // Store map of pubkeys => indices within data section
+  file-base +"-primary.pk" load-generate-keypair
+  constant wallet_pk
+  B,
+b>
+
+// .s -> code data
+
+null // no libraries
+
+// .s -> code data libs(null)
+
+<b b{0011} s, 3 roll ref, rot ref, swap dict, b>  // create StateInit
+
+// .s -> StateInit
+// ."<!!>" .s ."</!!>"
+
+dup ."StateInit: " <s csr. cr
+dup hash wc swap 2dup 2constant wallet_addr
+."new wallet address = " 2dup .addr cr
+2dup file-base +".addr" save-address-verbose
+
+// .s -> StateInit workchain_id addr
+."Non-bounceable address (for init): " 2dup 7 .Addr cr
+."Bounceable address (for later access): " 6 .Addr cr
+
+// Building initial message:
+<b 0 32 u, b>
+dup ."signing message: " <s csr. cr
+
+// .s -> StateInit Message
+
+// Not sure why signing initial message is required (where is it validated?)
+dup hash wallet_pk ed25519_sign_uint rot
+
+// .s -> Message signature(512b) StateInit
+
+// b{10} = ext_in_msg_info;
+//   b{00} = addr_none; src
+//     b{10} = addr_std; dst
+//       b{0} = incl. anycast?=no
+// workchain_id, address
+//                                 b{0000} = import_fee=0 Grams
+//                                     b{1} = incl. StateInit?=yes
+//                                      b{0} = StateInit in ref?=no (inlined)
+<b b{1000100} s, wallet_addr addr, b{000010} s,
+// writing StateInit
+  swap <s s,
+// writing signature (B,); then Message body (<s s,)
+  b{0} s, swap B, swap <s s,
+ b>
+dup ."External message for initialization is " <s csr. cr
+2 boc+>B dup Bx. cr
+file-base +"-query.boc" tuck B>file
+."(Saved wallet creating query to file " type .")" cr

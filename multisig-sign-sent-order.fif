@@ -1,0 +1,7 @@
+#!/usr/bin/env fift -s
+"TonUtil.fif" include
+"Asm.fif" include
+
+{ ."Usage: " @' $0 type ." <workchain-id> <n> [<k> <filename-base>]" cr
+  ."Creates a query matching a pending order (recovered from the blockchain state), signed by provided keys" cr 1 halt
+} : usage

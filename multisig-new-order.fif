@@ -1,0 +1,7 @@
+#!/usr/bin/env fift -s
+"TonUtil.fif" include
+"Asm.fif" include
+
+{ ."Usage: " @' $0 type ." <filename-base> <dest-addr> <seqno> <amount> [<key-filename>...]" cr
+  ."Creates a new order query to a multisig wallet with address <wallet-addr>, signed by the provided list of private keys" cr 1 halt
+} : usage

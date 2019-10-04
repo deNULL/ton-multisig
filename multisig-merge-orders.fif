@@ -1,0 +1,9 @@
+#!/usr/bin/env fift -s
+"TonUtil.fif" include
+"Asm.fif" include
+
+{ ."Usage: " @' $0 type ." <filename-base-1> <filename-base-2>" cr
+  ."Merges signatures of two queries to a multisig wallet with the same bodies." cr 1 halt
+} : usage
+
+1 1 1 + + .
