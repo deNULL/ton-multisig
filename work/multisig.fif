@@ -49,6 +49,12 @@ def? $4 { @' $4 } { "new-multisig-wallet" } cond constant file-base
   swap drop
   dict, // Store map of pubkeys => indices within data section
   null dict, // Store empty dict of pending requests
+  
+  <b
+    0 32 u, // seqno, initially 0
+    -1 32 i, // valid_until, TODO: ask for a value?
+    primary_pubkey B,
+  b> ref,
 b> constant WalletData
 ."WalletData: " WalletData <s csr. cr
 // .s -> code data

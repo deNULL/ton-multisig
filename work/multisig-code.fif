@@ -1,9 +1,9 @@
 // automatically generated from `smartcont/stdlib.fc` `my/multisig-code.fc` 
 PROGRAM{
   DECLPROC unpack_request
+  DECLPROC ext_process
   DECLPROC recv_internal
   DECLPROC recv_external
-  DECLPROC unpack_signatures
   85143 DECLMETHOD seqno
   126687 DECLMETHOD pending_count
   107113 DECLMETHOD param_n
@@ -14,6 +14,9 @@ PROGRAM{
   125575 DECLMETHOD debug_test
   118133 DECLMETHOD debug_test2
   122196 DECLMETHOD debug_test3
+  110003 DECLMETHOD debug_test4
+  114066 DECLMETHOD debug_test5
+  101873 DECLMETHOD debug_test6
   unpack_request PROC:<{
     SWAP
     32 LDU
@@ -28,10 +31,7 @@ PROGRAM{
     s3 s4 XCHG
     s2 s3 XCHG
   }>
-  recv_internal PROC:<{
-    DROP
-  }>
-  recv_external PROC:<{
+  ext_process PROC:<{
     9 PUSHPOW2
     LDSLICEX
     DUP
@@ -42,264 +42,87 @@ PROGRAM{
     LESS
     35 THROWIF
     256 LDU
+    DROP
     c4 PUSH
     CTOS
     32 LDU
     16 LDU
+    NIP
     8 LDU
+    NIP
     8 LDU
-    s7 s4 XCPU
+    NIP
+    s3 s3 XCHG2
     EQUAL
     33 THROWIFNOT
-    s0 s7 XCHG
+    s0 s2 XCHG
     HASHSU
-    s0 s8 s5 XC2PU
+    s0 s3 s2 XC2PU
     CHKSIGNU
     34 THROWIFNOT
-    s0 s4 XCHG
+    SWAP
     LDDICT
     LDDICT
     ENDS
-    s4 s1 XCPU
+    -ROT
     8 PUSHPOW2
     DICTUGET
     NULLSWAPIFNOT
     NIP
     35 THROWIFNOT
     ACCEPT
-    s3 PUSH
+    DUP
     ISNULL
-    IFNOT:<{
-      -1 PUSHINT
-      PUSHNULL
-      UNTIL:<{
-        s1 s5 XCPU
-        8 PUSHPOW2
-        DICTUGETNEXT
-        NULLSWAPIFNOT
-        NULLSWAPIFNOT
-        DUP
-        IF:<{
-          s0 s2 XCHG
-          LDDICT
-          NIP
-          LDREF
-          DROP
-          CTOS
-          32 LDU
-          NIP
-          32 LDU
-          DROP
-          NOW
-          GEQ
-          IF:<{
-            s0 s2 PUXC
-            CONS
-          }>ELSE<{
-            s0 s2 XCHG
-          }>
-        }>ELSE<{
-          2SWAP
-          DROP
-        }>
-        SWAP
-        NOT
-      }>
-      NIP
-      DUP
-      ISNULL
-      IFNOT:<{
-        UNTILEND
-        UNCONS
-        s0 s5 XCHG
-        8 PUSHPOW2
-        DICTUDELGET
-        NULLSWAPIFNOT
-        2DROP
-        s4 PUSH
-        ISNULL
-        s1 s5 XCHG
-        DROP
-      }>
+    IF:<{
       DROP
+      NEWDICT
     }>
-    s0 s2 XCHG
-    WHILE:<{
-      DUP
-      SREFS
-    }>DO<{
-      0 PUSHINT
-      s0 s0 s0 PUSH3
-      DUP
-      NEWC
-      ENDC
-      s0 s6 XCHG
-      1 LDU
+    -1 PUSHINT
+    UNTIL:<{
       OVER
+      8 PUSHPOW2
+      DICTUGETNEXT
+      NULLSWAPIFNOT
+      NULLSWAPIFNOT
+      DUP
       IF:<{
-        256 LDU
-      }>ELSE<{
-        s4 POP
-        s4 POP
-        s4 POP
-        s4 POP
-        LDREF
-        OVER
-        HASHCU
         s0 s2 XCHG
+        LDDICT
+        NIP
+        LDREF
+        DROP
         CTOS
         32 LDU
+        NIP
         32 LDU
-        8 LDU
-        LDREF
         DROP
-        s0 s8 XCHG
-        4 4 BLKSWAP
-      }>
-      LDDICT
-      s7 PUSH
-      NOW
-      LESS
-      36 THROWIF
-      s2 s12 PUSH2
-      8 PUSHPOW2
-      DICTUGET
-      NULLSWAPIFNOT
-      IF:<{
-        s4 POP
-        s4 POP
-        s4 POP
-        s4 POP
-        s4 POP
-        s4 POP
-        s4 POP
-        s1 s9 XCPU
-        unpack_request CALLDICT
-      }>ELSE<{
-        DROP
-        s0 s3 XCHG
-        37 THROWIFNOT
-        s7 s9 PUSH2
-        EQUAL
-        38 THROWIFNOT
-        s7 s6 s8 XCHG3
-        s5 s4 s0 XCHG3
-        s1 s3 s0 XCHG3
-      }>
-      -1 PUSHINT
-      UNTIL:<{
-        s9 PUSH
-        8 PUSHPOW2
-        DICTUGETNEXT
-        NULLSWAPIFNOT
-        NULLSWAPIFNOT
-        DUP
+        NOW
+        LESS
         IF:<{
-          s1 s13 PUSH2
           8 PUSHPOW2
-          DICTUGET
+          s1 s3 s3 PUXC2
+          DICTUDELGET
           NULLSWAPIFNOT
-          39 THROWIFNOT
-          s0 s3 XCHG
-          9 PUSHPOW2
-          LDSLICEX
-          DROP
-          s10 s2 s(-1) PU2XC
-          CHKSIGNU
-          40 THROWIFNOT
-          s0 s2 XCHG
-          8 LDU
-          DROP
-          POW2
-          s4 s0 PUSH2
-          AND
-          IFNOT:<{
-            s0 s5 XCHG
-            INC
-            s4 s5 XCHG2
-            OR
-          }>ELSE<{
-            s1 s4 XCHG
-            DROP
-          }>
+          2DROP
         }>ELSE<{
-          s4 s2 XCHG2
-          DROP
+          s0 s2 XCHG
         }>
-        SWAP
-        NOT
-        s1 s3 XCHG
-      }>
-      DROP
-      s8 POP
-      s1 s12 PUSH2
-      GEQ
-      IF:<{
-        s2 s4 XCHG
-        4 BLKDROP
-        s1 s3 XCHG
-        SENDRAWMSG
-        s0 s4 XCHG
-        8 PUSHPOW2
-        DICTUDELGET
-        NULLSWAPIFNOT
-        2DROP
       }>ELSE<{
-        NEWC
-        s1 s5 XCHG
-        32 STU
-        s1 s3 XCHG
-        32 STU
-        8 STU
-        8 STU
-        s10 PUSH
-        STUX
-        s1 s3 XCHG
-        STREF
-        s0 s0 s5 XCHG3
-        8 PUSHPOW2
-        DICTUSETB
-      }>
-      s0 s3 XCHG
-    }>
-    ENDS
-    INC
-    NEWC
-    32 STU
-    s1 s3 XCHG
-    16 STU
-    s1 s4 XCHG
-    8 STU
-    s1 s2 XCHG
-    8 STU
-    STDICT
-    STDICT
-    ENDC
-    c4 POP
-  }>
-  unpack_signatures PROC:<{
-    PUSHNULL
-    256 PUSHPOW2DEC
-    UNTIL:<{
-      s2 PUSH
-      8 PUSHINT
-      DICTUGETPREV
-      NULLSWAPIFNOT
-      NULLSWAPIFNOT
-      s2 POP
-      OVER
-      IF:<{
-        s0 s2 PUXC
-        CONS
-      }>ELSE<{
-        s0 s2 XCHG
+        2SWAP
+        DROP
       }>
       SWAP
       NOT
       s1 s2 XCHG
     }>
+    2DROP
+  }>
+  recv_internal PROC:<{
     DROP
-    NIP
+  }>
+  recv_external PROC:<{
+    DROP
+    ACCEPT
   }>
   seqno PROC:<{
     c4 PUSH
@@ -330,6 +153,14 @@ PROGRAM{
   owners PROC:<{
     c4 PUSH
     CTOS
+    32 LDU
+    NIP
+    16 LDU
+    NIP
+    8 LDU
+    NIP
+    8 LDU
+    NIP
     LDDICT
     DROP
     PUSHNULL
@@ -487,5 +318,23 @@ PROGRAM{
   }>
   debug_test3 PROC:<{
     c4 PUSH
+  }>
+  debug_test4 PROC:<{
+    c4 PUSH
+    CTOS
+    32 LDU
+    16 LDU
+    8 LDU
+    8 LDU
+    LDDICT
+    LDDICT
+    DROP
+    c4 PUSH
+    CTOS
+  }>
+  debug_test5 PROC:<{
+    DROP
+  }>
+  debug_test6 PROC:<{
   }>
 }END>c

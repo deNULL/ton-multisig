@@ -12,12 +12,8 @@
   return (req_seqno, req_expiry, req_mode, req_sigcount, req_signatures, req_message);
 }
 
-() recv_internal(slice in_msg) impure {
-  ;; do nothing for internal messages
-}
-
-() recv_external(slice in_msg) impure {
-   ;; usual signature, seqno, expiry date
+() ext_process(slice in_msg) {
+  ;; usual signature, seqno, expiry date
   var signature = in_msg~load_bits(512);
   var cs = in_msg;
   var (msg_seqno, valid_until) = (cs~load_uint(32), cs~load_uint(32));
@@ -50,31 +46,29 @@
   accept_message();
 
   ;; iterate over pending requests and delete all expired ones
-  ifnot (pending.null?()) {
-    var req_hash = -1;
-    var l = nil;
-    var f = 0;
-    do {
-      (req_hash, var request, f) = pending.udict_get_next?(256, req_hash);
-      if (f) {
-        var (req_signs, req_body) = (request~load_dict(), request~load_ref());
-        var req_body_slice = req_body.begin_parse();
-        var (_, req_expiry) = (
-          req_body_slice~load_uint(32),
-          req_body_slice~load_uint(32)
-        );
-        if (req_expiry >= now()) {
-          l = cons(req_hash, l);
-        }
+  var req_hash = -1;
+  var l = nil;
+  var f = 0;
+  do {
+    (req_hash, var request, f) = pending.udict_get_next?(256, req_hash);
+    if (f) {
+      var (req_signs, req_body) = (request~load_dict(), request~load_ref());
+      var req_body_slice = req_body.begin_parse();
+      var (_, req_expiry) = (
+        req_body_slice~load_uint(32),
+        req_body_slice~load_uint(32)
+      );
+      if (req_expiry >= now()) {
+        l = cons(req_hash, l);
       }
-    } until (~ f);
-
-    ifnot (l.null?()) {
-      do {
-        req_hash = l~list_next();
-        pending~udict_delete_get?(256, req_hash);
-      } until (l.null?());
     }
+  } until (~ f);
+
+  ifnot (l.null?()) {
+    do {
+      req_hash = l~list_next();
+      pending~udict_delete_get?(256, req_hash);
+    } until (l.null?());
   }
 
   ;; process new request
@@ -175,16 +169,12 @@
   );
 }
 
-_ unpack_signatures(signs) {
-  var l = nil;
-  var owner_idx = (1 << 255) + ((1 << 255) - 1);
-  do {
-    (owner_idx, _, var f) = signs.udict_get_prev?(8, owner_idx);
-    if (f) {
-      l = cons(owner_idx, l);
-    }
-  } until (~ f);
-  return l;
+() recv_internal(slice in_msg) impure {
+  ;; do nothing for internal messages
+}
+
+() recv_external(slice in_msg) impure {
+  accept_message();
 }
 
 ;; Get methods
@@ -215,6 +205,8 @@ int param_k() method_id {
 
 _ owners() method_id {
   var ds = get_data().begin_parse();
+  var (stored_seqno, pending_count, param_n, param_k) =
+    (ds~load_uint(32), ds~load_uint(16), ds~load_uint(8), ds~load_uint(8));
   var owners = ds~load_dict();
 
   var l = nil;
@@ -296,4 +288,26 @@ _ debug_test2(int a, int b) method_id {
 
 _ debug_test3() method_id {
   return get_data();
+}
+
+(int, int, int, int, cell, cell, slice) debug_test4() method_id {
+  var ds = get_data().begin_parse();
+  var (stored_seqno, pending_count, param_n, param_k) =
+    (ds~load_uint(32), ds~load_uint(16), ds~load_uint(8), ds~load_uint(8));
+  var (owners, pending) = (ds~load_dict(), ds~load_dict());
+  return (stored_seqno, pending_count, param_n, param_k, owners, pending, get_data().begin_parse());
+}
+
+_ debug_test5(slice in_msg) method_id {
+  ext_process(in_msg);
+}
+
+() debug_test6() method_id {
+  var ds = get_data().begin_parse();
+  var (stored_seqno, pending_count, param_n, param_k) =
+    (ds~load_uint(32), ds~load_uint(16), ds~load_uint(8), ds~load_uint(8));
+  var (owners, pending) = (ds~load_dict(), ds~load_dict());
+
+  var msg = ds~load_ref().begin_parse();
+  return ext_process(msg);
 }
