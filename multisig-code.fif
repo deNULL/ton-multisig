@@ -85,18 +85,20 @@ PROGRAM{
       DUP
       ISNULL
       IFNOT:<{
-        UNTILEND
-        UNCONS
-        s0 s5 XCHG
-        8 PUSHPOW2
-        DICTUDEL
+        UNTIL:<{
+          UNCONS
+          s0 s5 XCHG
+          8 PUSHPOW2
+          DICTUDEL
+          DROP
+          s4 PUSH
+          ISNULL
+          s1 s5 XCHG
+        }>
         DROP
-        s4 PUSH
-        ISNULL
-        s1 s5 XCHG
+      }>ELSE<{
         DROP
       }>
-      DROP
     }>
     s0 s2 XCHG
     WHILE:<{

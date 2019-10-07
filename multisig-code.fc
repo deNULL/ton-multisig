@@ -62,6 +62,9 @@
       do {
         pending~udict_delete?(256, l~list_next());
       } until (l.null?());
+
+      ;; without this the code above compiles into UNTILEND and breaks
+      f = 1;
     }
   }
 
