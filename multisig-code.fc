@@ -3,6 +3,9 @@
 ;; Missing from stblib.fc
 (cell, int) udict_delete?(cell dict, int key_len, int index) asm(index dict key_len) "DICTUDEL";
 
+tuple request_tuple(int hash, int seqno, int expiry, int mode, int sigcount, int signatures, cell message)
+  asm(hash seqno expiry mode sigcount signatures message) "7 TUPLE";
+
 () recv_internal(slice in_msg) impure {
   ;; do nothing for internal messages
 }
@@ -35,8 +38,8 @@
   ds.end_parse();
 
   ;; validate that signatory_pubkey is among stored keys
-  var (_, found) = owners.udict_get?(256, signatory_pubkey);
-  throw_unless(35, found);
+  var (owner, owner_found) = owners.udict_get?(256, signatory_pubkey);
+  throw_unless(35, owner_found);
 
   accept_message();
 
@@ -52,7 +55,7 @@
           request~load_uint(32),
           request~load_uint(32)
         );
-        if (req_expiry >= now()) {
+        if (req_expiry < now()) {
           l = cons(req_hash, l);
         }
       }
@@ -69,48 +72,47 @@
   }
 
   ;; process new request
-  cs~touch();
   while (cs.slice_refs()) {
-    ;;var (req_expiry, req_mode) = (cs~load_uint(8), cs~load_uint(32));
-    var (req_hash, req_seqno, req_expiry, req_mode, req_sigcount, req_signatures) = (0, 0, 0, 0, 0, 0);
-    var (req_body, req_message) = (begin_cell().end_cell(), begin_cell().end_cell());
+    int hash_only = cs~load_uint(1);
+    cell req_body = cs~load_ref();
+    cell req_new_signs = cs~load_dict();
 
-    var existing = cs~load_uint(1);
-    if (existing) {
-      req_hash = cs~load_uint(256);
+    int req_hash = 0;
+    if (hash_only) {
+      ;; this request was stored before, so we provided only its hash instead of the whole body
+      slice req_body_slice = req_body.begin_parse();
+      req_hash = req_body_slice~load_uint(256);
     } else {
-      var req_body = cs~load_ref();
       req_hash = cell_hash(req_body);
-
-      var req_body_slice = req_body.begin_parse();
-      (req_seqno, req_expiry, req_mode) = (
-        req_body_slice~load_uint(32),
-        req_body_slice~load_uint(32),
-        req_body_slice~load_uint(8)
-      );
-      req_message = req_body_slice~load_ref();
     }
 
-    var req_new_signs = cs~load_dict();
-
-    ;; validate expiry
-    throw_if(36, req_expiry < now());
-
     ;; check if this request is already pending
-    var (req_data, found) = pending.udict_get?(256, req_hash);
-    if (found) {
-      (req_seqno, req_expiry, req_mode, req_sigcount, req_signatures, req_message) = (
-        req_data~load_uint(32),
-        req_data~load_uint(32),
-        req_data~load_uint(8),
-        req_data~load_uint(8),
-        req_data~load_uint(param_n),
-        req_data~load_ref()
-      );
-    } else {
+    (slice req_data, int found) = pending.udict_get?(256, req_hash);
+
+    ifnot (found) {
       ;; we provided only the hash, but the body was not found among pending requests
       ;; (already completed/expired?)
-      throw_if(37, existing);
+      throw_if(37, hash_only);
+
+      ;; load data from the message instead of storage
+      req_data = req_body.begin_parse();
+    }
+
+    (int req_seqno, int req_expiry, int req_mode, cell req_message) = (
+      req_data~load_uint(32),
+      req_data~load_uint(32),
+      req_data~load_uint(8),
+      req_data~load_ref()
+    );
+
+    int req_sigcount = 0;
+    int req_signatures = 0;
+    if (found) {
+      (req_sigcount, req_signatures) = (req_data~load_uint(8), req_data~load_uint(param_n));
+    } else {
+      ;; validate expiry
+      throw_if(36, req_expiry < now());
+
       ;; request should contain actual seqno of this contract,
       ;; but it's valid only when the first batch of signatures arrive
       ;; (it cannot increase, because it's included in signed part,
@@ -119,27 +121,31 @@
       pending_count += 1;
     }
 
+
     ;; merge new signatures into req_signs
-    var pubkey = (1 << 255) + ((1 << 255) - 1);
+    int pubkey = (1 << 255) + ((1 << 255) - 1);
     do {
+      ;; on the first iteration include the person who signed the whole current request
+      ;; (so we don't necessarily have to include his signature in the message)
+      int owner_idx = owner~load_uint(8);
+      int owner_mask = 1 << owner_idx;
+
+      ;; check that this request was not signed by this owner previously
+      ;; (to prevent adding same signature over and over again)
+      ifnot (req_signatures & owner_mask) {
+        req_sigcount += 1;
+        req_signatures = req_signatures | owner_mask;
+      }
+
       (pubkey, var sign, var f) = req_new_signs.udict_get_prev?(256, pubkey);
       if (f) {
-        var (owner, owner_found) = owners.udict_get?(256, pubkey);
+        (owner, owner_found) = owners.udict_get?(256, pubkey);
         ;; this signature does not belong to any owner
         throw_unless(39, owner_found);
 
         ;; check that signature is valid
         var req_signature = sign~load_bits(512);
         throw_unless(40, check_signature(req_hash, req_signature, pubkey));
-
-        ;; check that this request was not signed by this owner previously
-        ;; (to prevent adding same signature over and over again)
-        var owner_idx = owner~load_uint(8);
-        var owner_mask = 1 << owner_idx;
-        ifnot (req_signatures & owner_mask) {
-          req_sigcount += 1;
-          req_signatures = req_signatures | owner_mask;
-        }
       }
     } until (~ f);
 
@@ -148,7 +154,7 @@
       send_raw_message(req_message, req_mode);
 
       ;; make sure it's removed
-      pending~udict_delete_get?(256, req_hash);
+      pending~udict_delete?(256, req_hash);
     } else {
       ;; store message as pending request
       pending~udict_set_builder(256, req_hash, begin_cell()
@@ -233,7 +239,7 @@ _ pending() method_id {
   do {
     (req_hash, var request, var f) = pending.udict_get_prev?(256, req_hash);
     if (f) {
-      var (_, req_expiry, req_mode, _, req_signatures, _) = (
+      var (req_seqno, req_expiry, req_mode, req_sigcount, req_signatures, req_message) = (
         request~load_uint(32),
         request~load_uint(32),
         request~load_uint(8),
@@ -241,7 +247,7 @@ _ pending() method_id {
         request~load_uint(param_n),
         request~load_ref()
       );
-      l = cons(tuple4(req_hash, req_expiry, req_mode, req_signatures), l);
+      l = cons(request_tuple(req_hash, req_seqno, req_expiry, req_mode, req_sigcount, req_signatures, req_message), l);
     }
   } until (~ f);
   return l;
@@ -259,8 +265,6 @@ _ pending_signed_by(int signatory_pubkey, int filter_signed) method_id {
   ;;  return nil;
   ;;}
   throw_unless(36, owner_found);
-  var owner_idx = owner~load_uint(8);
-  var owner_mask = 1 << owner_idx;
 
   if (pending.null?()) {
     return nil;
@@ -268,10 +272,12 @@ _ pending_signed_by(int signatory_pubkey, int filter_signed) method_id {
 
   var l = nil;
   var req_hash = (1 << 255) + ((1 << 255) - 1);
+  var owner_idx = owner~load_uint(8);
+  var owner_mask = 1 << owner_idx;
   do {
     (req_hash, var request, var f) = pending.udict_get_prev?(256, req_hash);
     if (f) {
-      var (_, req_expiry, req_mode, _, req_signatures, _) = (
+      var (req_seqno, req_expiry, req_mode, req_sigcount, req_signatures, req_message) = (
         request~load_uint(32),
         request~load_uint(32),
         request~load_uint(8),
@@ -282,7 +288,7 @@ _ pending_signed_by(int signatory_pubkey, int filter_signed) method_id {
       var sign_found = (req_signatures & owner_mask) != 0;
 
       if (filter_signed == sign_found) {
-        l = cons(tuple4(req_hash, req_expiry, req_mode, req_signatures), l);
+        l = cons(request_tuple(req_hash, req_seqno, req_expiry, req_mode, req_sigcount, req_signatures, req_message), l);
       }
     }
   } until (~ f);

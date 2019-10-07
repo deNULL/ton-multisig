@@ -45,16 +45,15 @@ PROGRAM{
     8 PUSHPOW2
     DICTUGET
     NULLSWAPIFNOT
-    NIP
     35 THROWIFNOT
     ACCEPT
-    s3 PUSH
+    s4 PUSH
     ISNULL
     IFNOT:<{
       -1 PUSHINT
       PUSHNULL
       UNTIL:<{
-        s1 s5 XCPU
+        s1 s6 XCPU
         8 PUSHPOW2
         DICTUGETNEXT
         NULLSWAPIFNOT
@@ -67,7 +66,7 @@ PROGRAM{
           32 LDU
           DROP
           NOW
-          GEQ
+          LESS
           IF:<{
             s0 s2 PUXC
             CONS
@@ -87,168 +86,160 @@ PROGRAM{
       IFNOT:<{
         UNTIL:<{
           UNCONS
-          s0 s5 XCHG
+          s0 s6 XCHG
           8 PUSHPOW2
           DICTUDEL
           DROP
-          s4 PUSH
+          s5 PUSH
           ISNULL
-          s1 s5 XCHG
+          s1 s6 XCHG
         }>
         DROP
       }>ELSE<{
         DROP
       }>
     }>
-    s0 s2 XCHG
     WHILE:<{
-      DUP
+      s3 PUSH
       SREFS
     }>DO<{
-      0 PUSHINT
-      s0 s0 s0 PUSH3
-      DUP
-      NEWC
-      ENDC
-      s0 s6 XCHG
+      s0 s3 XCHG
       1 LDU
-      OVER
-      IF:<{
-        256 LDU
-      }>ELSE<{
-        s4 POP
-        s4 POP
-        s4 POP
-        s4 POP
-        LDREF
-        OVER
-        HASHCU
-        s0 s2 XCHG
-        CTOS
-        32 LDU
-        32 LDU
-        8 LDU
-        LDREF
-        DROP
-        s0 s8 XCHG
-        4 4 BLKSWAP
-      }>
+      LDREF
       LDDICT
-      s7 PUSH
-      NOW
-      LESS
-      36 THROWIF
-      s2 s12 PUSH2
+      s3 PUSH
+      IF:<{
+        s2 PUSH
+        CTOS
+        256 LDU
+        DROP
+      }>ELSE<{
+        s2 PUSH
+        HASHCU
+      }>
+      s0 s8 PUSH2
       8 PUSHPOW2
       DICTUGET
       NULLSWAPIFNOT
+      DUP
+      IFNOT:<{
+        NIP
+        s0 s5 XCHG
+        37 THROWIF
+        s0 s3 XCHG
+        CTOS
+      }>ELSE<{
+        s1 s5 s6 XCHG3
+        2DROP
+      }>
+      32 LDU
+      32 LDU
+      8 LDU
+      LDREF
+      0 PUSHINT
+      s0 s9 PUXC
       IF:<{
-        s4 POP
-        s4 POP
-        s4 POP
-        s4 POP
-        s4 POP
-        s4 POP
-        s4 POP
-        SWAP
-        32 LDU
-        32 LDU
+        DROP
+        s8 POP
+        s0 s7 XCHG
         8 LDU
-        8 LDU
-        s13 PUSH
+        s15 PUSH
         LDUX
-        LDREF
         DROP
       }>ELSE<{
-        DROP
-        s0 s3 XCHG
-        37 THROWIF
-        s7 s9 PUSH2
+        NIP
+        s3 PUSH
+        NOW
+        LESS
+        36 THROWIF
+        s4 s10 PUSH2
         EQUAL
         38 THROWIFNOT
-        s0 s12 XCHG
+        s0 s13 XCHG
         INC
-        s0 s12 XCHG
-        s7 s6 s8 XCHG3
-        s5 s4 s0 XCHG3
-        s1 s3 s0 XCHG3
+        s8 s13 XCHG2
+        SWAP
       }>
       256 PUSHPOW2DEC
       UNTIL:<{
-        s9 PUSH
+        s0 s12 XCHG
+        8 LDU
+        SWAP
+        POW2
+        s2 s0 PUSH2
+        AND
+        IFNOT:<{
+          s0 s3 XCHG
+          INC
+          s2 s3 XCHG2
+          OR
+        }>ELSE<{
+          s1 s2 XCHG
+          DROP
+        }>
+        s12 s7 XCPU
         8 PUSHPOW2
         DICTUGETPREV
         NULLSWAPIFNOT
         NULLSWAPIFNOT
         DUP
         IF:<{
-          s1 s13 PUSH2
+          s3 POP
+          s0 s11 PUSH2
           8 PUSHPOW2
           DICTUGET
           NULLSWAPIFNOT
           39 THROWIFNOT
-          s0 s3 XCHG
+          s0 s2 XCHG
           9 PUSHPOW2
           LDSLICEX
           DROP
-          s10 s2 s(-1) PU2XC
+          s10 s1 s(-1) PU2XC
           CHKSIGNU
           40 THROWIFNOT
-          s0 s2 XCHG
-          8 LDU
-          DROP
-          POW2
-          s4 s0 PUSH2
-          AND
-          IFNOT:<{
-            s0 s5 XCHG
-            INC
-            s4 s5 XCHG2
-            OR
-          }>ELSE<{
-            s1 s4 XCHG
-            DROP
-          }>
         }>ELSE<{
-          s4 s2 XCHG2
+          s3 s1 s3 XCHG3
           DROP
         }>
-        SWAP
+        s0 s2 XCHG
         NOT
-        s1 s3 XCHG
+        s13 s13 s0 XCHG3
       }>
       DROP
-      s8 POP
-      s1 s12 PUSH2
+      s6 POP
+      s0 s13 PUSH2
       GEQ
       IF:<{
-        s2 s4 XCHG
-        4 BLKDROP
         s1 s3 XCHG
+        3 BLKDROP
+        s2 POP
+        s3 s3 XCHG2
         SENDRAWMSG
-        s0 s4 XCHG
+        s0 s5 XCHG2
         8 PUSHPOW2
-        DICTUDELGET
-        NULLSWAPIFNOT
-        2DROP
+        DICTUDEL
+        DROP
       }>ELSE<{
         NEWC
-        s1 s5 XCHG
+        s1 s4 XCHG
         32 STU
-        s1 s3 XCHG
+        s1 s2 XCHG
         32 STU
         8 STU
         8 STU
-        s10 PUSH
+        s2 s0 s11 XC2PU
         STUX
         s1 s3 XCHG
         STREF
-        s0 s0 s5 XCHG3
+        s0 s1 s6 XCHG3
         8 PUSHPOW2
         DICTUSETB
       }>
+      s0 s4 XCHG
       s0 s3 XCHG
     }>
+    DROP
+    s0 s2 XCHG
     ENDS
     INC
     NEWC
@@ -362,17 +353,16 @@ PROGRAM{
       IF:<{
         s0 s2 XCHG
         32 LDU
-        NIP
         32 LDU
         8 LDU
         8 LDU
-        NIP
-        s7 PUSH
+        s9 PUSH
         LDUX
+        LDREF
         DROP
-        s3 PUSH
-        3 -ROLL
-        4 TUPLE
+        s6 PUSH
+        6 -ROLL
+        7 TUPLE
         s0 s3 XCHG2
         CONS
       }>ELSE<{
@@ -404,9 +394,6 @@ PROGRAM{
     DICTUGET
     NULLSWAPIFNOT
     36 THROWIFNOT
-    8 LDU
-    DROP
-    POW2
     s3 PUSH
     ISNULL
     IFJMP:<{
@@ -415,8 +402,12 @@ PROGRAM{
     }>
     PUSHNULL
     256 PUSHPOW2DEC
+    s0 s2 XCHG
+    8 LDU
+    DROP
+    POW2
     UNTIL:<{
-      s5 PUSH
+      s2 s5 XCPU
       8 PUSHPOW2
       DICTUGETPREV
       NULLSWAPIFNOT
@@ -425,28 +416,27 @@ PROGRAM{
       IF:<{
         s0 s2 XCHG
         32 LDU
-        NIP
         32 LDU
         8 LDU
         8 LDU
-        NIP
-        s7 PUSH
+        s9 PUSH
         LDUX
+        LDREF
         DROP
-        s0 s6 PUSH2
+        s1 s9 PUSH2
         AND
         0 NEQINT
-        s9 s(-1) PUXC
+        s12 s(-1) PUXC
         EQUAL
         IF:<{
-          s3 PUSH
-          3 -ROLL
-          4 TUPLE
+          s6 PUSH
+          6 -ROLL
+          7 TUPLE
           s0 s3 XCHG2
           CONS
         }>ELSE<{
-          s3 s5 XCHG
-          3 BLKDROP
+          s6 s8 XCHG
+          6 BLKDROP
         }>
       }>ELSE<{
         2SWAP
@@ -454,7 +444,7 @@ PROGRAM{
       }>
       SWAP
       NOT
-      s1 s2 XCHG
+      s1 s3 s0 XCHG3
     }>
     s1 s5 XCHG
     5 BLKDROP

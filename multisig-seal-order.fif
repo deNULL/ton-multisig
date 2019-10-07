@@ -1,0 +1,8 @@
+// Messages for the multisig wallet are signed two times.
+// First, the actual request to be sent. Second, the whole message (including the request and signatures from other owners).
+// The whole message can be signed by any owner (in practice, by the last one who added a signature).
+// However, that means that his signature will be sent two times (thats 256 bits for pubkey + 512 bits for the signature).
+// We can reduce the size of the message if we remove his signature from the list of request's signatures
+// and leave only the outer one. This contract is smart enough to still count him as a signatory for this request.
+// The downside is that afterwards people won't be able to add their signatures, so this script should be performed right
+// before sending the message (however this is optional step).
