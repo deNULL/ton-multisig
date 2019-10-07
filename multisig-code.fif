@@ -330,6 +330,14 @@ PROGRAM{
   owners PROC:<{
     c4 PUSH
     CTOS
+    32 LDU
+    NIP
+    16 LDU
+    NIP
+    8 LDU
+    NIP
+    8 LDU
+    NIP
     LDDICT
     DROP
     PUSHNULL

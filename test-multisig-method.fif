@@ -1,0 +1,23 @@
+#!/usr/bin/env fift -s
+"common-utils.fif" include
+
+{
+  ."<data-boc> <method-id> <args>..."
+} : usage()
+
+2 10000 check-arg-count()
+
+// Having a word to compute method id by its name would be nice...
+$2 (number) 1- abort"Calling methods by their names is not supported now, use its numeric id" =: MethodId
+"multisig-code.fif" include =: WalletCode
+$1 file>B B>boc =: WalletData
+."Data: " cr WalletData <s csr. cr
+
+WalletCode WalletData MethodId runvm()
+
+=: NewWalletData
+=: ExitCode
+
+."Exit code: " ExitCode . cr
+
+."Resulting stack: " .s

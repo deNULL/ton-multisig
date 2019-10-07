@@ -1,7 +1,83 @@
 #!/usr/bin/env fift -s
-"TonUtil.fif" include
-"Asm.fif" include
+"multisig-utils.fif" include
 
-{ ."Usage: " @' $0 type ." <filename-base> <dest-addr> <seqno> <amount> [<key-filename>...]" cr
-  ."Creates a new order query to a multisig wallet with address <wallet-addr>, signed by the provided list of private keys" cr 1 halt
-} : usage
+{ ."<filename-base> <dest-addr> <seqno> <amount> <pk-index>... [-B <body-boc>] [-O <savefile>]" cr
+  ."Creates a request to a multisig wallet created by multisig-init.fif, with address loaded from file <filename-base>.addr "
+  ."and private keys from <filename-base>-<pk-index>.addr, and saves it into <savefile>.boc ('ms-wallet-query.boc' by default)." cr
+  ."You can pass multiple <pk-index> values in range 1..n, separated by spaces."
+} : usage()
+
+5 1000 check-arg-count()
+
+false =: BounceFlag
+-1 =: ReqValidUntil
+3 =: SendMode
+
+$1 =: AddrFile
+$2 BounceFlag parse-load-address =: BounceFlag 2=: DestAddr
+$3 parse-int =: SeqNo
+$4 $>GR =: Amount
+
+AddrFile +".addr" load-address
+2dup 2constant WalletAddr
+."Source wallet address = " 2dup .addr cr 6 .Addr cr
+
+$#
+dup 1 - $() ="-O" {
+  dup $() =: SaveFile
+  2 -
+} if
+dup 1 - $() ="-B" {
+  dup $() =: BodyFile
+  2 -
+} if
+dup 1 - $() ="-O" { // Double check needed if order was "... -O savefile -B body-boc"
+  dup $() =: SaveFile
+  2 -
+} if
+
+def? BodyFile {
+  @' BodyFile file>B B>boc
+} {
+  <b 0 32 u, "TEST" $, b>
+} cond =: TransferBody
+
+def? SaveFile {
+  "ms-wallet-query" =: SaveFile
+} ifnot
+
+// file-base +".pk" load-keypair nip constant wallet_pk
+
+// Load keypairs specified in command line
+
+
+
+."Creating new order to transfer " Amount .GR ."to account " DestAddr 2dup BounceFlag 7 + .Addr ." = " .addr 
+."seqno=0x" SeqNo x. ."bounce=" BounceFlag . cr
+."Body of transfer message is " TransferBody <s csr. cr
+  
+// Create actual message to be sent when the order will be completed
+<b
+  b{01} s, BounceFlag 1 i, b{000100} s, DestAddr addr, Amount Gram, 0 9 64 32 + + 1+ u, 
+  TransferBody <s 2dup s-fits? not rot over 1 i, -rot { drop TransferBody ref, } { s, } cond
+b> =: IntMessage
+
+// Pack the internal message into a request data structure to be signed
+SeqNo ReqValidUntil SendMode IntMessage order-request() =: Request
+
+."Signing order request: " Request <s csr. cr
+
+0 -1 PrimaryPublicKey -1 Request Keypairs order-message() PrimaryPrivateKey sign-message() =: MessageBody
+
+<b
+  b{1000100} s,
+  WalletAddr addr,
+  0 Gram,
+  b{00} s, // No StateInit, inline Message
+  MessageBody <s s,
+b> =: ExtMessage
+
+."New order external message: " ExtMessage <s csr. cr
+ExtMessage 2 boc+>B dup Bx. cr
+SaveFile +".boc" tuck B>file
+."(Saved to file " type .")" cr

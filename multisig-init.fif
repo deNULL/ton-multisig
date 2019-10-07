@@ -2,24 +2,32 @@
 "TonUtil.fif" include
 "Asm.fif" include
 
+// Builtin words are lowercase (single words)
+// Library words are usually lowercase kebab-case (like parse-workchain-id)
+// Asm words are ALLCAPS (no spaces)
+//
+// So I decided to write names for my own constants/variables in CamelCase (capitalized, usually multiword)
+// Custom subroutines include "()" at the end of name (like "usage()" below)
+//
+// Some comments are marking the state of stack at that point:
+// .s -> <bottom-most element> ... <top-most element>
+
 { ."Usage: " @' $0 type ." <workchain-id> <n> [<k> <filename-base>]" cr
   ."Creates a new multisig wallet with n keypairs and requiring at least k signatures, with private keys saved to or loaded from <filename-base>-<i>.pk" cr
-  ."('new-wallet-<i>.pk' by default)" cr 1 halt
-} : usage
+  ."('new-ms-wallet-<i>.pk' by default)" cr 1 halt
+} : usage()
 
-$# dup 2 < swap 4 > or ' usage if // allow 2 to 4 arguments
+$# dup 2 < swap 4 > or ' usage() if // allow 2 to 4 arguments
 
-$1 parse-workchain-id =: wc
+$1 parse-workchain-id =: WorkchainId
 $2 (number) 1- abort"n must be an integer number" =: n
-def? $3 { @' $3 (number) 1- abort"k must be an integer number" } { n } cond constant k
-def? $4 { @' $4 } { "new-multisig-wallet" } cond constant file-base
+def? $3 { @' $3 (number) 1- abort"k must be an integer number" } { n } cond =: k
+def? $4 { @' $4 } { "new-ms-wallet" } cond =: FileBase
 
-."Creating new wallet in workchain " wc . cr
+."Creating new wallet in workchain " WorkchainId . cr
 
 // Import the actual smart contract code
-"multisig-code.fif" include constant WalletCode
-
-// .s -> code
+"multisig-code.fif" include =: WalletCode
 
 // Data:
 <b 0 32 u, // seqno
@@ -28,50 +36,43 @@ def? $4 { @' $4 } { "new-multisig-wallet" } cond constant file-base
   k 8 u,
   0 dictnew { // Generating list of owners
     over <b swap 8 u, // Saving index to builder
-    file-base +"-" 3 pick 1 + (.) $+ +".pk" load-generate-keypair // Loading/saving pubkey and privkey
+    FileBase +"-" 3 pick 1 + (.) $+ +".pk" load-generate-keypair // Loading/saving pubkey and privkey
       // .s -> code:cell data:builder index:int keylist:dict builder pubkey:bytes privkey:bytes
      
     4 pick 0 = { // if index == 0, this is the key we will sign our message with
-      =: primary_pk
-      dup =: primary_pubkey
+      =: PrimaryPrivateKey
+      dup =: PrimaryPublicKey
     } { // no need for this key anymore
       drop
     } cond
     256 B>u@ // Converting pubkey to int
-    ."sss: " dup x. cr
       // udict requires order: value(builder) key(pubkey) dict(keylist) n=256
     rot 256 .s b>udict!
     0= abort"Unable to store public key in the contract data"
       // .s -> code:cell data:builder index:int keylist:dict
     swap 1+ swap // Increase index
   } n times
-  ."<!!!>" .s ."</!!!>" 
   swap drop
   dict, // Store map of pubkeys => indices within data section
   null dict, // Store empty dict of pending requests
-b> constant WalletData
+b> =: WalletData
+
 ."WalletData: " WalletData <s csr. cr
-// .s -> code data
 
-null constant WalletLibs // no libraries
-
-// .s -> code data libs(null)
+null =: WalletLibs // no libraries
 
 <b
   b{0011} s,
   WalletCode ref,
   WalletData ref,
   WalletLibs dict,
-b> constant StateInit
-// .s -> StateInit
-// ."<!!>" .s ."</!!>"
+b> =: StateInit
 
 ."StateInit: " StateInit <s csr. cr
-wc StateInit hash 2constant WalletAddr
+WorkchainId StateInit hash 2constant WalletAddr
 ."new wallet address = " WalletAddr .addr cr
-WalletAddr file-base +".addr" save-address-verbose
+WalletAddr FileBase +".addr" save-address-verbose
 
-// .s -> StateInit workchain_id addr
 ."Non-bounceable address (for init): " WalletAddr 7 .Addr cr
 ."Bounceable address (for later access): " WalletAddr 6 .Addr cr
 
@@ -79,18 +80,14 @@ WalletAddr file-base +".addr" save-address-verbose
 <b
   0 32 u, // seqno, initially 0
   -1 32 i, // valid_until, TODO: ask for a value?
-  primary_pubkey B,
-b> constant WalletMessageBody
+  PrimaryPublicKey B,
+b> =: WalletMessageBody
 
 ."signing message: " WalletMessageBody <s csr. cr
 
-."Your primary pubkey is: 0x" primary_pubkey Bx. cr
+."Your primary pubkey is: 0x" PrimaryPublicKey Bx. cr
 
-// .s -> StateInit Message
-
-WalletMessageBody hash primary_pk ed25519_sign_uint constant WalletMessageSign
-
-// .s -> Message signature(512b) StateInit
+WalletMessageBody hash PrimaryPrivateKey ed25519_sign_uint =: WalletMessageSign
 
 <b
 // b{10} = ext_in_msg_info;
@@ -108,9 +105,9 @@ WalletMessageBody hash primary_pk ed25519_sign_uint constant WalletMessageSign
   <b
     WalletMessageSign B, WalletMessageBody <s s,
   b> ref,
-b> constant ExtMessage
+b> =: ExtMessage
 
 ."External message for initialization is " ExtMessage <s csr. cr
 ExtMessage 2 boc+>B dup Bx. cr
-file-base +"-query.boc" tuck B>file
+FileBase +"-query.boc" tuck B>file
 ."(Saved wallet creating query to file " type .")" cr

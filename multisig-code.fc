@@ -114,7 +114,7 @@
       ;; (already completed/expired?)
       throw_unless(37, existing);
       ;; request should contain actual seqno of this contract,
-      ;; but it's validate only when the first batch of signatures arrive
+      ;; but it's valid only when the first batch of signatures arrive
       ;; (it cannot increase, because it's included in signed part,
       ;; and after the first accepted message it won't be equal to the contract's seqno)
       throw_unless(38, req_seqno == stored_seqno);
@@ -215,6 +215,8 @@ int param_k() method_id {
 
 _ owners() method_id {
   var ds = get_data().begin_parse();
+  var (stored_seqno, pending_count, param_n, param_k) =
+    (ds~load_uint(32), ds~load_uint(16), ds~load_uint(8), ds~load_uint(8));
   var owners = ds~load_dict();
 
   var l = nil;

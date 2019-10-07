@@ -1,0 +1,70 @@
+"TonUtil.fif" include
+"Asm.fif" include
+
+// check-arg-count()
+// (min max -- )
+//
+// Checks if the number of script arguments is between <min> and <max>.
+// If it's not, looks up the `usage()` word, executes it and halt with exit code 1.
+
+{
+  $# < swap $# > or { ."Usage: " @' $0 type ." " @' usage() cr 1 halt } if
+} : check-arg-count()
+
+// runvm()
+// ( -- )
+//
+// Extended version of `runvm` word. Allows execution of custom methods (not only `main`).
+
+{
+  <{
+    // Replace implicit method id = 0 to the custom one
+    DROP swap PUSHINT
+
+    // Simulate SmartContractInfo in the c7 register 
+    0 PUSHINT
+    0 PUSHINT
+    0 PUSHINT
+    now PUSHINT
+    4 TUPLE
+    SINGLE
+    c7 POP
+  }>s rot <s |+ swap
+
+  runvm
+} : runvm()
+
+// ~
+// ( -- )
+// 
+// Similar to .s (prints current stack), but also surrounds it with '<!STACK>' and
+// '</!STACK>', so it's easier to see in the output.
+
+{
+  cr ."<!STACK>" cr
+  .s
+  ."</!STACK>" cr cr
+} : ~
+
+// ="<string>"
+//
+// Equivalent of "<string" =
+
+{ char " word 1 ' $= } ::_ ="
+
+// internal-message()
+// ( -- )
+//
+// Prepare a cell containing an internal message carrying some amount of grams and some custom body.
+
+{
+  <b
+    b{01} s,
+    BounceFlag 1 i,
+    b{000100} s,
+    DestAddr addr,
+    Amount Gram,
+    0 9 64 32 + + 1+ u, 
+    TransferBody <s 2dup s-fits? not rot over 1 i, -rot { drop TransferBody ref, } { s, } cond
+  b>
+} : internal-message()
