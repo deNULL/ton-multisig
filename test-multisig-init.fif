@@ -13,7 +13,7 @@ def? $3 { @' $3 } { "new-multisig-wallet" } cond =: FileBase
 
 "multisig-code.fif" include =: WalletCode
 
-n k build-initial-data() =: WalletData
+n k initial-data() =: WalletData
 
 0 -1 PrimaryPublicKey empty-message() PrimaryPrivateKey sign-message()
   WalletCode WalletData recv_external runvm()

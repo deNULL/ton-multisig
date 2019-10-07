@@ -10,13 +10,20 @@
 "multisig-code.fif" include =: WalletCode
 $1 file>B B>boc =: OldWalletData
 ."Old data: " cr OldWalletData <s csr. cr
-$2 file>B B>boc =: WalletMessage
+$2 file>B B>boc 
+<s ref@ =: WalletMessage
 ."Message: " cr WalletMessage <s csr. cr
 
-WalletMessage WalletCode OldWalletData recv_external runvm()
+
+
+WalletMessage <s WalletCode OldWalletData recv_external runvm()
 
 =: NewWalletData
 =: ExitCode
 
 ."Exit code: " ExitCode . cr
 ."Updated data: " cr NewWalletData <s csr. cr
+
+def? $3 {
+  NewWalletData 2 boc+>B 3 $() B>file
+} if

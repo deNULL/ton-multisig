@@ -83,7 +83,7 @@ SeqNo ReqValidUntil SendMode IntMessage order-request() =: Request
 
 ."Signing order request: " Request <s csr. cr
 
-0 -1 PrimaryPublicKey 0 Request Keypairs order-message() PrimaryPrivateKey sign-message() =: MessageBody
+SeqNo -1 PrimaryPublicKey 0 Request Keypairs order-message() PrimaryPrivateKey sign-message() =: MessageBody
 
 <b
   b{1000100} s,

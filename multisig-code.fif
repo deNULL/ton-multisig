@@ -1,9 +1,7 @@
 // automatically generated from `smartcont/stdlib.fc` `my/multisig-code.fc` 
 PROGRAM{
-  DECLPROC unpack_request
   DECLPROC recv_internal
   DECLPROC recv_external
-  DECLPROC unpack_signatures
   85143 DECLMETHOD seqno
   126687 DECLMETHOD pending_count
   107113 DECLMETHOD param_n
@@ -11,23 +9,6 @@ PROGRAM{
   84885 DECLMETHOD owners
   126129 DECLMETHOD pending
   75417 DECLMETHOD pending_signed_by
-  125575 DECLMETHOD debug_test
-  118133 DECLMETHOD debug_test2
-  122196 DECLMETHOD debug_test3
-  unpack_request PROC:<{
-    SWAP
-    32 LDU
-    32 LDU
-    8 LDU
-    8 LDU
-    s0 s5 XCHG2
-    LDUX
-    LDREF
-    DROP
-    s4 s5 XCHG
-    s3 s4 XCHG
-    s2 s3 XCHG
-  }>
   recv_internal PROC:<{
     DROP
   }>
@@ -81,11 +62,6 @@ PROGRAM{
         DUP
         IF:<{
           s0 s2 XCHG
-          LDDICT
-          NIP
-          LDREF
-          DROP
-          CTOS
           32 LDU
           NIP
           32 LDU
@@ -113,9 +89,8 @@ PROGRAM{
         UNCONS
         s0 s5 XCHG
         8 PUSHPOW2
-        DICTUDELGET
-        NULLSWAPIFNOT
-        2DROP
+        DICTUDEL
+        DROP
         s4 PUSH
         ISNULL
         s1 s5 XCHG
@@ -173,24 +148,34 @@ PROGRAM{
         s4 POP
         s4 POP
         s4 POP
-        s1 s9 XCPU
-        unpack_request CALLDICT
+        SWAP
+        32 LDU
+        32 LDU
+        8 LDU
+        8 LDU
+        s13 PUSH
+        LDUX
+        LDREF
+        DROP
       }>ELSE<{
         DROP
         s0 s3 XCHG
-        37 THROWIFNOT
+        37 THROWIF
         s7 s9 PUSH2
         EQUAL
         38 THROWIFNOT
+        s0 s12 XCHG
+        INC
+        s0 s12 XCHG
         s7 s6 s8 XCHG3
         s5 s4 s0 XCHG3
         s1 s3 s0 XCHG3
       }>
-      -1 PUSHINT
+      256 PUSHPOW2DEC
       UNTIL:<{
         s9 PUSH
         8 PUSHPOW2
-        DICTUGETNEXT
+        DICTUGETPREV
         NULLSWAPIFNOT
         NULLSWAPIFNOT
         DUP
@@ -276,30 +261,6 @@ PROGRAM{
     STDICT
     ENDC
     c4 POP
-  }>
-  unpack_signatures PROC:<{
-    PUSHNULL
-    256 PUSHPOW2DEC
-    UNTIL:<{
-      s2 PUSH
-      8 PUSHINT
-      DICTUGETPREV
-      NULLSWAPIFNOT
-      NULLSWAPIFNOT
-      s2 POP
-      OVER
-      IF:<{
-        s0 s2 PUXC
-        CONS
-      }>ELSE<{
-        s0 s2 XCHG
-      }>
-      SWAP
-      NOT
-      s1 s2 XCHG
-    }>
-    DROP
-    NIP
   }>
   seqno PROC:<{
     c4 PUSH
@@ -397,13 +358,18 @@ PROGRAM{
       NULLSWAPIFNOT
       DUP
       IF:<{
-        s2 s5 XCPU
-        unpack_request CALLDICT
-        DROP
+        s0 s2 XCHG
+        32 LDU
         NIP
-        s3 POP
+        32 LDU
+        8 LDU
+        8 LDU
+        NIP
+        s7 PUSH
+        LDUX
+        DROP
         s3 PUSH
-        s0 s3 XCHG
+        3 -ROLL
         4 TUPLE
         s0 s3 XCHG2
         CONS
@@ -455,19 +421,24 @@ PROGRAM{
       NULLSWAPIFNOT
       DUP
       IF:<{
-        s2 s5 XCPU
-        unpack_request CALLDICT
-        DROP
+        s0 s2 XCHG
+        32 LDU
         NIP
-        s3 POP
-        s2 s6 PUSH2
+        32 LDU
+        8 LDU
+        8 LDU
+        NIP
+        s7 PUSH
+        LDUX
+        DROP
+        s0 s6 PUSH2
         AND
         0 NEQINT
         s9 s(-1) PUXC
         EQUAL
         IF:<{
           s3 PUSH
-          s0 s3 XCHG
+          3 -ROLL
           4 TUPLE
           s0 s3 XCHG2
           CONS
@@ -485,15 +456,5 @@ PROGRAM{
     }>
     s1 s5 XCHG
     5 BLKDROP
-  }>
-  debug_test PROC:<{
-    s2 POP
-    SWAP
-  }>
-  debug_test2 PROC:<{
-    NIP
-  }>
-  debug_test3 PROC:<{
-    c4 PUSH
   }>
 }END>c
