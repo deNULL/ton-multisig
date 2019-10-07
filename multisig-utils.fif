@@ -56,7 +56,7 @@
 {
   <b
     4 roll 32 u,
-    3 roll 32 u,
+    3 roll 32 i,
     rot 8 u,
     swap ref,
   b>
@@ -74,7 +74,7 @@
     6 roll 32 u,          // seqno, initially 0
     5 roll 32 i,          // valid_until
     4 roll B,             // public_key
-    4 pick 1 i,           // existing?
+    4 pick ~ 1 u,           // existing?
     // existing? request keypairs builderO
     3 roll {
       rot hash tuck 

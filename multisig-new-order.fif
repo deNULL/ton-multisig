@@ -9,32 +9,54 @@
 
 5 1000 check-arg-count()
 
-false =: BounceFlag
+true =: BounceFlag
 -1 =: ReqValidUntil
 3 =: SendMode
 
-$1 =: AddrFile
+$1 =: BaseFile
 $2 BounceFlag parse-load-address =: BounceFlag 2=: DestAddr
 $3 parse-int =: SeqNo
 $4 $>GR =: Amount
 
-AddrFile +".addr" load-address
+BaseFile +".addr" load-address
 2dup 2constant WalletAddr
 ."Source wallet address = " 2dup .addr cr 6 .Addr cr
 
 $#
-dup 1 - $() ="-O" {
+dup 1- $() ="-O" {
   dup $() =: SaveFile
   2 -
 } if
-dup 1 - $() ="-B" {
+dup 1- $() ="-B" {
   dup $() =: BodyFile
   2 -
 } if
-dup 1 - $() ="-O" { // Double check needed if order was "... -O savefile -B body-boc"
+dup 1- $() ="-O" { // Double check needed if order was "... -O savefile -B body-boc"
   dup $() =: SaveFile
   2 -
 } if
+
+// Load keypairs specified in command line
+null swap
+{
+  dup 5 >=
+} { // keypairs i
+  dup BaseFile +"-" swap $() $+ +".pk" load-keypair
+  // keypairs i pubkey privkey
+  def? PrimaryPublicKey {
+    2dup
+    =: PrimaryPrivateKey
+    =: PrimaryPublicKey
+  } ifnot
+  swap
+  3 roll
+  cons cons
+  swap 1-
+} while
+drop
+=: Keypairs
+
+PrimaryPrivateKey ~ drop
 
 def? BodyFile {
   @' BodyFile file>B B>boc
@@ -45,12 +67,6 @@ def? BodyFile {
 def? SaveFile {
   "ms-wallet-query" =: SaveFile
 } ifnot
-
-// file-base +".pk" load-keypair nip constant wallet_pk
-
-// Load keypairs specified in command line
-
-
 
 ."Creating new order to transfer " Amount .GR ."to account " DestAddr 2dup BounceFlag 7 + .Addr ." = " .addr 
 ."seqno=0x" SeqNo x. ."bounce=" BounceFlag . cr
@@ -67,7 +83,7 @@ SeqNo ReqValidUntil SendMode IntMessage order-request() =: Request
 
 ."Signing order request: " Request <s csr. cr
 
-0 -1 PrimaryPublicKey -1 Request Keypairs order-message() PrimaryPrivateKey sign-message() =: MessageBody
+0 -1 PrimaryPublicKey -1 Request Keypairs ~ order-message() PrimaryPrivateKey sign-message() =: MessageBody
 
 <b
   b{1000100} s,

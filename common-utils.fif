@@ -56,7 +56,7 @@
 // ( -- )
 //
 // Prepare a cell containing an internal message carrying some amount of grams and some custom body.
-
+/*
 {
   <b
     b{01} s,
@@ -68,3 +68,4 @@
     TransferBody <s 2dup s-fits? not rot over 1 i, -rot { drop TransferBody ref, } { s, } cond
   b>
 } : internal-message()
+*/
