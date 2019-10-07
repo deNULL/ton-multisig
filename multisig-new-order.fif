@@ -83,14 +83,14 @@ SeqNo ReqValidUntil SendMode IntMessage order-request() =: Request
 
 ."Signing order request: " Request <s csr. cr
 
-0 -1 PrimaryPublicKey -1 Request Keypairs ~ order-message() PrimaryPrivateKey sign-message() =: MessageBody
+0 -1 PrimaryPublicKey 0 Request Keypairs order-message() PrimaryPrivateKey sign-message() =: MessageBody
 
 <b
   b{1000100} s,
   WalletAddr addr,
   0 Gram,
-  b{00} s, // No StateInit, inline Message
-  MessageBody <s s,
+  b{01} s, // No StateInit, inline Message
+  <b MessageBody s, b> ref,
 b> =: ExtMessage
 
 ."New order external message: " ExtMessage <s csr. cr

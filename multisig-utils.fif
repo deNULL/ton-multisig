@@ -74,40 +74,42 @@
     6 roll 32 u,          // seqno, initially 0
     5 roll 32 i,          // valid_until
     4 roll B,             // public_key
-    4 pick ~ 1 u,           // existing?
+    3 pick 1 i,           // existing?
     // existing? request keypairs builderO
     3 roll {
       rot hash tuck 
       // keypairs hash builderO hash
-      256 u,              // hash(request)
+      <b swap 256 u, b>   // hash(request)
+      ref,                
     } {
       rot tuck ref,       // request
       // keypairs request builderO
       swap hash swap
     } cond
-    // ...
-    // -> keypairs hash builderO
     2 exch
     // builderO hash keypairs
     
+
     dictnew // -> builderO hash keypairs dict
       // cycle through keypairs, generate and store signatures
       { 
-        swap null? not
+        swap dup null? not
       } { 
-        uncons uncons -roll // -> builderO hash dict keypairs pubkey privkey
-
-        <b // -> builderO hash dict keypairs pubkey privkey builderI
-          6 pick 3 roll ed25519_sign_uint B, // <- hash privkey
+        uncons uncons -rot // -> builderO hash dict keypairs privkey pubkey
+        2dup ."Storing (" Bx. .", " Bx. .")" cr
+        <b // -> builderO hash dict keypairs privkey pubkey builderI
+          5 pick 3 roll ed25519_sign_uint B, // <- hash privkey
           // -> builderO hash dict keypairs pubkey builderI
-          swap
+          swap 256 B>u@
+          // -> builderO hash dict keypairs builderI pubkey
           3 roll
+          // -> builderO hash dict keypairs builderI pubkey
           256
-          // <- builderI pubkey dict 256
         b>udict! // -> builderO hash keypairs dict ok?
         0= abort"Unable to store signature of this order" // -> dict
       } while
-    nip dict,
+    drop nip 
+    dict,
   b>
 } : order-message()
 
@@ -117,8 +119,8 @@
 // Attaches signature to a slice representing message body.
 
 {
-  dup hash rot ed25519_sign_uint
-  <b
+  over hash swap ed25519_sign_uint
+  <b 
     swap B, swap <s s,
   b> <s
 } : sign-message()
