@@ -6,6 +6,7 @@
 tuple request_tuple(int hash, int seqno, int expiry, int mode, int sigcount, int signatures, cell message)
   asm(hash seqno expiry mode sigcount signatures message) "7 TUPLE";
 
+
 () recv_internal(slice in_msg) impure {
   ;; do nothing for internal messages
 }
@@ -178,4 +179,10 @@ tuple request_tuple(int hash, int seqno, int expiry, int mode, int sigcount, int
       .store_dict(pending)
     .end_cell()
   );
+}
+
+;; Returns current sequence number
+
+int seqno() method_id {
+  return get_data().begin_parse().preload_uint(32);
 }

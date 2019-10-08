@@ -1,7 +1,59 @@
 #!/usr/bin/env fift -s
-"TonUtil.fif" include
-"Asm.fif" include
+"multisig-utils.fif" include
 
-{ ."Usage: " @' $0 type ." <query-filename>" cr
-  ."Displays data and list of signatures in the prepared query to a multisig wallet." cr 1 halt
-} : usage
+{ ."<query-boc>" cr
+  ."Displays data and list of signatures in a prepared query to a multisig wallet."
+} : usage()
+
+1 1 check-arg-count()
+
+$1 file>B B>boc 
+<s ref@ =: WalletMessage
+
+."Loading message from " $1 type cr cr
+
+WalletMessage <s
+  64 B@+ nip
+  32 u@+  swap ."seqno:        " . cr
+  32 u@+  swap ."valid_until:  " . cr
+  256 u@+  swap ."last pubkey:  " x. cr
+  1 u@+   swap
+    dup =: HashOnly
+    ."hash_only?    " { ."true" } { ."false" } cond cr
+  ."request:" cr
+  ref@+
+  <s HashOnly {
+    256 u@+ swap ."  -→ req_hash:    " . cr
+  } {
+    32 u@+ swap ."  ┌  req_seqno:  " . cr
+    32 u@+ swap ."  │  req_valid_until: " . cr
+    8 u@+  swap ."  │  req_mode: " . cr
+    ref@+       ."  │  req_message:" cr
+    dup hash =: ReqHash
+    <s
+      2 u@+ nip
+      1 i@+ swap ."  │    bounce?    " dup =: BounceFlag { ."true" } { ."false" } cond cr
+      6 u@+ nip
+      8 i@+ 256 u@+ -rot ."  │    dest_addr: " 2dup @' BounceFlag 7 + .Addr ." = " .addr cr
+      Gram@+ swap ."  │    amount:    " .GR cr
+      9 64 32 + + 1+ u@+ nip
+      1 i@+ swap {
+        ref@+ <s
+          dup sbits 8 / B@+ swap ."  │    inner message: 0x" Bx. cr
+        s>
+      } {
+        dup sbits 8 / B@+ swap ."  │    inner message: 0x" Bx. cr
+      } cond
+    s>
+    ."  └→ (req_hash: 0x" @' ReqHash x. .")" cr
+  } cond s>
+  ."signatures:" cr
+  dict@+ swap
+  256 { 
+    swap
+    ."  pubkey: " x. cr
+    drop -1
+  } dictforeach
+  drop
+s>
+/* └┬ */

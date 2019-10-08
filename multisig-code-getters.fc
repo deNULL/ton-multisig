@@ -1,12 +1,6 @@
 ;; These are useful methods, however they take precious bytes of storage.
 ;; It's still possible to call them w/o uploading to TON.
 
-;; Returns current sequence number
-
-int seqno() method_id {
-  return get_data().begin_parse().preload_uint(32);
-}
-
 ;; Returns number of pending requests
 
 int pending_count() method_id {
