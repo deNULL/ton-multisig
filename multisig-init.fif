@@ -109,5 +109,5 @@ b> =: ExtMessage
 
 ."External message for initialization is " ExtMessage <s csr. cr
 ExtMessage 2 boc+>B dup Bx. cr
-FileBase +"-query.boc" tuck B>file
+FileBase +"-init-query.boc" tuck B>file
 ."(Saved wallet creating query to file " type .")" cr
