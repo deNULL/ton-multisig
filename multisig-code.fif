@@ -1,4 +1,4 @@
-// automatically generated from `smartcont/stdlib.fc` `my/multisig-code.fc` 
+// automatically generated from `smartcont/stdlib.fc` `my/multisig-code.fc` `my/multisig-code-getters.fc` 
 PROGRAM{
   DECLPROC recv_internal
   DECLPROC recv_external
