@@ -1,7 +1,60 @@
-#!/usr/bin/env fift -s
-"TonUtil.fif" include
-"Asm.fif" include
+!/usr/bin/env fift -s
+"multisig-utils.fif" include
 
-{ ."Usage: " @' $0 type ." <workchain-id> <n> [<k> <filename-base>]" cr
-  ."Creates a query matching a pending order (recovered from the blockchain state), signed by provided keys" cr 1 halt
-} : usage
+{ ."<basename> <seqno> <request-hash> <keyname-1> <keyname-2>... [-O <output-boc>]" cr
+  ."Creates a query matching a pending request with the specified hash, signed by provided keys." cr
+  ."Note that <keyname-N> is not the index of a private key, but its filename (without .pk extension)."
+} : usage()
+
+3 1000 check-arg-count()
+
+$1 =: BaseFile
+$2 parse-int =: SeqNo
+$3 parse-int =: RequestHash
+
+BaseFile +".addr" load-address
+2dup 2constant WalletAddr
+."Source wallet address = " 2dup .addr cr 6 .Addr cr
+
+$#
+dup 1- $() ="-O" {
+  dup $() =: SaveFile
+  2 -
+} if
+
+// Load keypairs specified in command line
+null swap
+{
+  dup 4 >=
+} { // keypairs i
+  dup swap $() +".pk" load-keypair
+  // keypairs i pubkey privkey
+  def? PrimaryPublicKey {
+    2dup
+    =: PrimaryPrivateKey
+    =: PrimaryPublicKey
+  } ifnot
+  swap
+  3 roll
+  cons cons
+  swap 1-
+} while
+drop
+=: Keypairs
+
+PrimaryPrivateKey drop
+
+def? SaveFile {
+  "ms-wallet-query" =: SaveFile
+} ifnot
+
+."Signing an existing order with hash = " RequestHash x. cr
+
+WalletAddr null
+  SeqNo -1 PrimaryPublicKey 1 RequestHash Keypairs order-message() PrimaryPrivateKey sign-message()
+external-message() =: ExtMessage
+
+."External message: " ExtMessage <s csr. cr
+ExtMessage 2 boc+>B dup Bx. cr
+SaveFile +".boc" tuck B>file
+."(Saved to file " type .")" cr

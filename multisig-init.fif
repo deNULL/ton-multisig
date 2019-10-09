@@ -1,23 +1,12 @@
 #!/usr/bin/env fift -s
-"TonUtil.fif" include
-"Asm.fif" include
+"multisig-utils.fif" include
 
-// Builtin words are lowercase (single words)
-// Library words are usually lowercase kebab-case (like parse-workchain-id)
-// Asm words are ALLCAPS (no spaces)
-//
-// So I decided to write names for my own constants/variables in CamelCase (capitalized, usually multiword)
-// Custom subroutines include "()" at the end of name (like "usage()" below)
-//
-// Some comments are marking the state of stack at that point:
-// .s -> <bottom-most element> ... <top-most element>
-
-{ ."Usage: " @' $0 type ." <workchain-id> <n> [<k> <filename-base>]" cr
+{ ."<workchain-id> <n> [<k> <filename-base>]" cr
   ."Creates a new multisig wallet with n keypairs and requiring at least k signatures, with private keys saved to or loaded from <filename-base>-<i>.pk" cr
-  ."('new-ms-wallet-<i>.pk' by default)" cr 1 halt
+  ."('new-ms-wallet-<i>.pk' by default)"
 } : usage()
 
-$# dup 2 < swap 4 > or ' usage() if // allow 2 to 4 arguments
+2 4 check-arg-count()
 
 $1 parse-workchain-id =: WorkchainId
 $2 (number) 1- abort"n must be an integer number" =: n
@@ -29,83 +18,25 @@ def? $4 { @' $4 } { "new-ms-wallet" } cond =: FileBase
 // Import the actual smart contract code
 "multisig-code.fif" include =: WalletCode
 
-// Data:
-<b 0 32 u, // seqno
-  0 16 u,
-  n 8 u,
-  k 8 u,
-  0 dictnew { // Generating list of owners
-    over <b swap 8 u, // Saving index to builder
-    FileBase +"-" 3 pick 1 + (.) $+ +".pk" load-generate-keypair // Loading/saving pubkey and privkey
-      // .s -> code:cell data:builder index:int keylist:dict builder pubkey:bytes privkey:bytes
-     
-    4 pick 0 = { // if index == 0, this is the key we will sign our message with
-      =: PrimaryPrivateKey
-      dup =: PrimaryPublicKey
-    } { // no need for this key anymore
-      drop
-    } cond
-    256 B>u@ // Converting pubkey to int
-      // udict requires order: value(builder) key(pubkey) dict(keylist) n=256
-    rot 256 .s b>udict!
-    0= abort"Unable to store public key in the contract data"
-      // .s -> code:cell data:builder index:int keylist:dict
-    swap 1+ swap // Increase index
-  } n times
-  swap drop
-  dict, // Store map of pubkeys => indices within data section
-  null dict, // Store empty dict of pending requests
-b> =: WalletData
-
+n k initial-data() =: WalletData
 ."WalletData: " WalletData <s csr. cr
 
-null =: WalletLibs // no libraries
-
-<b
-  b{0011} s,
-  WalletCode ref,
-  WalletData ref,
-  WalletLibs dict,
-b> =: StateInit
-
+WalletCode WalletData null state-init() =: StateInit
 ."StateInit: " StateInit <s csr. cr
+
 WorkchainId StateInit hash 2constant WalletAddr
-."new wallet address = " WalletAddr .addr cr
+."New wallet address = " WalletAddr .addr cr
 WalletAddr FileBase +".addr" save-address-verbose
 
 ."Non-bounceable address (for init): " WalletAddr 7 .Addr cr
 ."Bounceable address (for later access): " WalletAddr 6 .Addr cr
 
-// Building initial message:
-<b
-  0 32 u, // seqno, initially 0
-  -1 32 i, // valid_until, TODO: ask for a value?
-  PrimaryPublicKey B,
-b> =: WalletMessageBody
+0 -1 PrimaryPublicKey empty-message() =: WalletMessageBody
+."Signing message: " WalletMessageBody <s csr. cr
 
-."signing message: " WalletMessageBody <s csr. cr
-
-."Your primary pubkey is: 0x" PrimaryPublicKey Bx. cr
-
-WalletMessageBody hash PrimaryPrivateKey ed25519_sign_uint =: WalletMessageSign
-
-<b
-// b{10} = ext_in_msg_info;
-//   b{00} = addr_none; src
-//     b{10} = addr_std; dst
-//       b{0} = incl. anycast?=no
-  b{1000100} s, WalletAddr addr,
-  
-// b{0000} = import_fee=0 Grams
-//     b{1} = incl. StateInit?=yes
-//       b{0} = StateInit in ref?=no (inlined)
-  b{000010} s,
-  StateInit <s s,
-  b{1} s,
-  <b
-    WalletMessageSign B, WalletMessageBody <s s,
-  b> ref,
-b> =: ExtMessage
+WalletAddr StateInit
+  WalletMessageBody PrimaryPrivateKey sign-message()
+external-message() =: ExtMessage
 
 ."External message for initialization is " ExtMessage <s csr. cr
 ExtMessage 2 boc+>B dup Bx. cr

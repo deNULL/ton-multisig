@@ -2,7 +2,6 @@
 
 // initial-data()
 // (n k -- cell)
-
 {
   <b
     0 32 u,               // seqno
@@ -15,12 +14,11 @@
       @' FileBase +"-" 3 pick 1 + (.) $+ +".pk" load-generate-keypair // Loading/saving pubkey and privkey
         // .s -> data:builder index:int keylist:dict builder pubkey:bytes privkey:bytes
        
-      // if index == 0, this is the key we will sign our message with
-      4 pick 0 = {
+      def? PrimaryPrivateKey {
+        drop
+      } { // no need for this key anymore
         =: PrimaryPrivateKey
         dup =: PrimaryPublicKey
-      } {
-        drop
       } cond
       256 B>u@ // Converting pubkey to int
         // udict requires order: value(builder) key(pubkey) dict(keylist) n=256
@@ -39,7 +37,6 @@
 // (seqno valid_until public_key -- slice)
 //
 // Builds an empty (with no requests) message body, returning it as a Cell.
-
 {
   <b
     3 roll 32 u, // seqno, initially 0
@@ -52,7 +49,6 @@
 // (req_seqno req_valid_until req_mode req_body -- cell)
 //
 // Packs an order into a cell. The actual message body to send is req_body.
-
 {
   <b
     4 roll 32 u,
@@ -67,7 +63,6 @@
 //
 // Builds message containing an order for transfer, signing it by specified list of keys.
 // If hash_only is true, stores only the hash of the request (for pending requests).
-
 {
   <b
     // seqno valid_until public_key existing? request keypairs builderO
@@ -117,10 +112,30 @@
 // (message_body private_key -- slice)
 //
 // Attaches signature to a slice representing message body.
-
 {
   over hash swap ed25519_sign_uint
   <b 
     swap B, swap <s s,
-  b> <s
+  b>
 } : sign-message()
+
+// parse-order-message()
+// (cell -- sig seqno valid_until last_pubkey hash_only? request signatures)
+//
+// Decodes signed request data from a message body.
+{
+  <s
+    64 B@+
+    32 u@+
+    32 u@+
+    256 u@+
+    dup srefs {
+      1 i@+
+      ref@+ swap
+      dict@+
+    } {
+      null null null
+      3 roll
+    } cond
+  s>
+} : parse-order-message()

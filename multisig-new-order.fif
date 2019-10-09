@@ -1,10 +1,10 @@
 #!/usr/bin/env fift -s
 "multisig-utils.fif" include
 
-{ ."<filename-base> <dest-addr> <seqno> <amount> <pk-index>... [-B <body-boc>] [-O <savefile>]" cr
-  ."Creates a request to a multisig wallet created by multisig-init.fif, with address loaded from file <filename-base>.addr "
-  ."and private keys from <filename-base>-<pk-index>.addr, and saves it into <savefile>.boc ('ms-wallet-query.boc' by default)." cr
-  ."You can pass multiple <pk-index> values in range 1..n, separated by spaces."
+{ ."<basename> <dest-addr> <seqno> <amount> <keyindex-1> <keyindex-2>... [-B <body-boc>] [-O <output-boc>]" cr
+  ."Creates a request to a multisig wallet created by multisig-init.fif, with address loaded from file <basename>.addr "
+  ."and private keys from <basename>-<keyindex-N>.pk, and saves it into <output-boc>.boc ('ms-wallet-query.boc' by default)." cr
+  ."Note that <keyindex-N> are indices of the private keys (in range 1..n), separated by spaces."
 } : usage()
 
 5 1000 check-arg-count()
@@ -56,7 +56,7 @@ null swap
 drop
 =: Keypairs
 
-PrimaryPrivateKey ~ drop
+PrimaryPrivateKey drop
 
 def? BodyFile {
   @' BodyFile file>B B>boc
@@ -83,15 +83,9 @@ SeqNo ReqValidUntil SendMode IntMessage order-request() =: Request
 
 ."Signing order request: " Request <s csr. cr
 
-SeqNo -1 PrimaryPublicKey 0 Request Keypairs order-message() PrimaryPrivateKey sign-message() =: MessageBody
-
-<b
-  b{1000100} s,
-  WalletAddr addr,
-  0 Gram,
-  b{01} s, // No StateInit, inline Message
-  <b MessageBody s, b> ref,
-b> =: ExtMessage
+WalletAddr null
+  SeqNo -1 PrimaryPublicKey 0 Request Keypairs order-message() PrimaryPrivateKey sign-message()
+external-message() =: ExtMessage
 
 ."New order external message: " ExtMessage <s csr. cr
 ExtMessage 2 boc+>B dup Bx. cr

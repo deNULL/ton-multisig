@@ -1,6 +1,16 @@
 "TonUtil.fif" include
 "Asm.fif" include
 
+// Builtin words are lowercase (single words)
+// Library words are usually lowercase kebab-case (like parse-workchain-id)
+// Asm words are ALLCAPS (no spaces)
+//
+// So I decided to write names for my own constants/variables in CamelCase (capitalized, usually multiword)
+// Custom subroutines include "()" at the end of name (like "usage()" below)
+//
+// Some comments are marking the state of stack at that point:
+// .s -> <bottom-most element> ... <top-most element>
+
 // check-arg-count()
 // (min max -- )
 //
@@ -48,7 +58,7 @@
 
 // ="<string>"
 //
-// Equivalent of "<string" =
+// Equivalent of "<string>" =
 
 { char " word 1 ' $= } ::_ ="
 
@@ -65,7 +75,121 @@
     DestAddr addr,
     Amount Gram,
     0 9 64 32 + + 1+ u, 
+
+    // TODO: decode this magic
     TransferBody <s 2dup s-fits? not rot over 1 i, -rot { drop TransferBody ref, } { s, } cond
   b>
 } : internal-message()
 */
+
+// maybe,
+// (slice [value or null] writer -- slice)
+//
+// If value is null, just writes b{0} to slice. Otherwise writes b{1} and executes writer.
+{
+  over null? {
+    drop drop
+    b{0} s,
+  } {
+    rot // -> value writer slice
+    b{1} s,
+    -rot
+    execute
+  } cond
+} : maybe,
+
+// state-init()
+// (code data libs -- cell)
+// 
+// Prepare a cell containing StateInit struct
+{
+  <b
+    b{0011} s,
+    2 roll ref,
+    rot ref,
+    swap dict,
+  b>
+} : state-init()
+
+// external-message()
+// (wc addr [state-init or null] body -- cell)
+//
+// Prepare a cell containing an external message carrying custom body.
+{
+  <b
+    b{1000100} s,           // ext_in_msg_info#10 src=b{00} (none) dst=b{10} (std) anycast?=b{0}
+    4 roll 4 roll addr,
+    0 Gram,                 // import_fee
+    2 roll {
+      swap
+      b{0} s,
+      swap
+      <s s,
+    } maybe,                // maybe StateInit?
+    b{1} s,                 // = Message in ref?
+    swap ref,
+  b>
+} : external-message()
+
+// maybe@+
+// (slice reader -- [null or value] slice)
+//
+// If next bit in slice is 0, pushes null (and slice). Otherwise, executes reader.
+{
+  swap 1 i@+ // -> reader bit slice
+  2 exch {
+    null swap
+  } cond
+} : maybe@+
+
+// parse-state-init()
+// (slice -- tuple(code, data, libs) slice)
+//
+// Decodes StateInit struct from current slice and returns it as a tuple (as well as slice).
+{
+  1 u@+
+  swap 0b0   <> abort"Expected no split_depth in StateInit"
+  1 u@+
+  swap 0b0   <> abort"Expected no TickTock in StateInit"
+  {
+    ref@+ swap
+  } maybe@+ // Code
+  {
+    ref@+ swap
+  } maybe@+ // Data
+  {
+    ref@+ swap
+  } maybe@+ // Libs
+  3 -roll triple swap
+} : parse-state-init()
+
+// parse-external-message()
+// (cell -- wc addr [state-init or null] body)
+//
+// Decodes Message struct, ensures it uses ext_in_msg_info$10 constructor.
+// Throws errors if that struct does not exactly match output of external-message()
+// (even it still corresponds to a valid Message).
+{
+  <s
+    2 u@+
+    swap 0b10   <> abort"Expected ext_in_msg_info$10 constructor"
+    2 u@+
+    swap 0b00   <> abort"Expected addr_none$00 in src field"
+    2 u@+
+    swap 0b10   <> abort"Expected addr_std$10 in dest field"
+    1 u@+
+    swap 0b0    <> abort"Expected no anycast in dest field"
+    8 u@+       // workchain_id
+    256 u@+     // address
+    Gram@+
+    swap 0      <> abort"Expected import_fee=0"
+    {
+      1 u@+
+      swap 0b0  <> abort"Expected inlined StateInit"
+      parse-state-init()
+    } maybe@+   // maybe StateInit
+    1 u@+
+    swap 0b1    <> abort"Expected message body in ref"
+    ref@+ swap
+  s>
+} : parse-external-message()

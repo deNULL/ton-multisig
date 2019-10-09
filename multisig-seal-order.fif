@@ -1,3 +1,6 @@
+!/usr/bin/env fift -s
+"multisig-utils.fif" include
+
 // Messages for the multisig wallet are signed two times.
 // First, the actual request to be sent. Second, the whole message (including the request and signatures from other owners).
 // The whole message can be signed by any owner (in practice, by the last one who added a signature).
@@ -6,3 +9,59 @@
 // and leave only the outer one. This contract is smart enough to still count him as a signatory for this request.
 // The downside is that afterwards people won't be able to add their signatures, so this script should be performed right
 // before sending the message (however this is optional step).
+
+{ ."<query-boc> <keyname> [-O <output-boc>] [-s <seqno>]" cr
+  ."Finishes request preparation by replacing extra request signature with a signature for the whole query."
+} : usage()
+
+2 4 check-arg-count()
+
+."Loading message from " $1 type cr cr
+
+$1 file>B B>boc parse-external-message()
+=: MessageBody =: StateInit 2constant WalletAddr
+
+."dst_addr:     " WalletAddr .addr cr cr
+
+StateInit null? not abort"Expected StateInit to be null"
+
+MessageBody parse-order-message()
+
+// sig seqno valid_until last_pubkey hash_only? request signatures
+
+=: Signatures =: Request =: HashOnly
+drop // last_pubkey will be replaced
+=: ValidUntil =: SeqNo
+drop // signature will be replaced
+
+$#
+dup 1- $() ="-s" {
+  forget SeqNo
+  dup $() =: SeqNo
+  2 -
+} if
+dup 1- $() ="-O" {
+  dup $() =: SaveFile
+  2 -
+} if
+
+def? SaveFile {
+  $1 =: SaveFile
+} ifnot
+
+$3 +".pk" load-keypair
+=: PrimaryPrivateKey
+=: PrimaryPublicKey
+
+// Remove PrimaryPublicKey from list of signatures (it will be added implicitly anyway)
+
+."Signing order request: " Request <s csr. cr
+
+WalletAddr null
+  SeqNo ValidUntil PrimaryPublicKey HashOnly Request Keypairs order-message() PrimaryPrivateKey sign-message()
+external-message() =: ExtMessage
+
+."Stripped-down external message: " ExtMessage <s csr. cr
+ExtMessage 2 boc+>B dup Bx. cr
+SaveFile +".boc" tuck B>file
+."(Saved to file " type .")" cr
