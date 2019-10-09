@@ -38,7 +38,7 @@ dup 1- $() ="-O" {
 
 null
 Signatures 256 { 
-  // signs pubkey privkey
+  // signs signature privkey
   64 B@+ s>
   swap 256 u>B
   rot cons cons

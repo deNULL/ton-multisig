@@ -54,7 +54,21 @@ $3 +".pk" load-keypair
 =: PrimaryPrivateKey
 =: PrimaryPublicKey
 
-// Remove PrimaryPublicKey from list of signatures (it will be added implicitly anyway)
+null
+Signatures 256 { 
+  // signs signature privkey
+  64 B@+ s>
+  swap
+  dup PrimaryPublicKey = {
+    2drop // Remove PrimaryPublicKey from list of signatures (it will be added implicitly anyway)
+  } {
+    256 u>B
+    rot cons cons
+  } cond
+  -1
+} dictforeach
+drop
+=: Keypairs
 
 ."Signing order request: " Request <s csr. cr
 

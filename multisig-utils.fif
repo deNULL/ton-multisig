@@ -90,6 +90,7 @@
         swap dup null? not
       } {
         uncons uncons -rot // -> builderO hash dict keypairs privkey pubkey
+        dup ."  adding signature for key " Bx. cr
         <b // -> builderO hash dict keypairs privkey pubkey builderI
           2 pick Blen 64 = {
             2 roll B, // previously computed signature instead of privkey

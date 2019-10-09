@@ -65,11 +65,37 @@ def? SaveFile {
 
 ValidUntil1 ValidUntil2 max =: ValidUntil
 
-Request1 hash Request2 hash <> abort"Request bodies are different"
+HashOnly1 HashOnly2 or =: HashOnly
+
+HashOnly1 { Request1 } { Request1 hash } cond =: RequestHash1
+HashOnly2 { Request2 } { Request2 hash } cond =: RequestHash2
+
+RequestHash1 RequestHash2 <> abort"Request hashes are different"
+
+HashOnly { RequestHash1 } { Request1 } cond =: Request
 
 $3 +".pk" load-keypair
 =: PrimaryPrivateKey
 =: PrimaryPublicKey
+
+null
+Signatures1 256 { 
+  // signs signature privkey
+  64 B@+ s>
+  swap 256 u>B
+  rot cons cons
+  -1
+} dictforeach
+drop
+Signatures2 256 { 
+  // signs signature privkey
+  64 B@+ s>
+  swap 256 u>B
+  rot cons cons
+  -1
+} dictforeach
+drop
+=: Keypairs
 
 ."Signing order request: " Request1 <s csr. cr
 
