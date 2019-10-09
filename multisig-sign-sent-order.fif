@@ -1,4 +1,4 @@
-!/usr/bin/env fift -s
+#!/usr/bin/env fift -s
 "multisig-utils.fif" include
 
 { ."<basename> <seqno> <request-hash> <keyname-1> <keyname-2>... [-O <output-boc>]" cr
@@ -51,7 +51,7 @@ def? SaveFile {
 ."Signing an existing order with hash = " RequestHash x. cr
 
 WalletAddr null
-  SeqNo -1 PrimaryPublicKey 1 RequestHash Keypairs order-message() PrimaryPrivateKey sign-message()
+  SeqNo -1 PrimaryPublicKey true RequestHash Keypairs order-message() PrimaryPrivateKey sign-message()
 external-message() =: ExtMessage
 
 ."External message: " ExtMessage <s csr. cr

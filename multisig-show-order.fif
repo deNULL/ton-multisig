@@ -31,31 +31,34 @@ HashOnly null? {
 } {
   HashOnly                 ."hash_only?    " { ."true" } { ."false" } cond cr cr
 
-  swap <s HashOnly {
-    256 u@+ swap                  ."  →  req_hash:        " . cr
+                           ."request:" cr
+  swap HashOnly {
+                                    ."  →  req_hash: " . cr
   } {
-    32 u@+ swap                   ."  ┌  req_seqno:       " . cr
-    32 u@+ swap                   ."  │  req_valid_until: " . cr
-    8 u@+  swap                   ."  │  req_mode:        " . cr
-    ref@+                         ."  │  req_message:     " cr
-    dup hash =: ReqHash
-    <s
-      2 u@+ nip
-      1 i@+ swap                  ."  │    bounce?        " dup =: BounceFlag { ."true" } { ."false" } cond cr
-      6 u@+ nip
-      8 i@+ 256 u@+ -rot          ."  │    dest_addr:     " 2dup @' BounceFlag 7 + .Addr ." = " .addr cr
-      Gram@+ swap                 ."  │    amount:        " .GR cr
-      9 64 32 + + 1+ u@+ nip
-      1 i@+ swap {
-        ref@+ <s
-          dup sbits 8 / B@+ swap  ."  │    inner message: 0x" Bx. cr
-        s>
-      } {
-        dup sbits 8 / B@+ swap    ."  │    inner message: " Bx. cr
-      } cond
-    s>                            ."  └→ (req_hash:       " @' ReqHash x. .")" cr
-  } cond s>
-  
+    <s 
+      32 u@+ swap                   ."  ┌  req_seqno:       " . cr
+      32 u@+ swap                   ."  │  req_valid_until: " . cr
+      8 u@+  swap                   ."  │  req_mode:        " . cr
+      ref@+                         ."  │  req_message:     " cr
+      dup hash =: ReqHash
+      <s
+        2 u@+ nip
+        1 i@+ swap                  ."  │    bounce?        " dup =: BounceFlag { ."true" } { ."false" } cond cr
+        6 u@+ nip
+        8 i@+ 256 u@+ -rot          ."  │    dest_addr:     " 2dup @' BounceFlag 7 + .Addr ." = " .addr cr
+        Gram@+ swap                 ."  │    amount:        " .GR cr
+        9 64 32 + + 1+ u@+ nip
+        1 i@+ swap {
+          ref@+ <s
+            dup sbits 8 / B@+ swap  ."  │    inner message: 0x" Bx. cr
+          s>
+        } {
+          dup sbits 8 / B@+ swap    ."  │    inner message: " Bx. cr
+        } cond
+      s>                            ."  └→ (req_hash:       " @' ReqHash x. .")" cr
+    s>
+  } cond
+
   cr ."signatures:" cr
   256 { 
     swap                          ."  pubkey:  " x. cr

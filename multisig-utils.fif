@@ -59,7 +59,7 @@
 } : order-request()
 
 // order-message()
-// (seqno valid_until public_key hash_only? request keypairs -- slice)
+// (seqno valid_until public_key hash_only? [request or hash] keypairs -- slice)
 //
 // Builds message containing an order for transfer, signing it by specified list of keys.
 // If hash_only is true, stores only the hash of the request (for pending requests).
@@ -72,7 +72,7 @@
     3 pick 1 i,           // existing?
     // existing? request keypairs builderO
     3 roll {
-      rot hash tuck 
+      rot tuck 
       // keypairs hash builderO hash
       <b swap 256 u, b>   // hash(request)
       ref,
@@ -90,10 +90,9 @@
         swap dup null? not
       } {
         uncons uncons -rot // -> builderO hash dict keypairs privkey pubkey
-        2dup ."Storing (" Bx. .", " Bx. .")" cr
         <b // -> builderO hash dict keypairs privkey pubkey builderI
           2 pick Blen 64 = {
-            2 roll B, // previously computed signature
+            2 roll B, // previously computed signature instead of privkey
           } {
             5 pick 3 roll ed25519_sign_uint B, // <- hash privkey
           } cond
@@ -123,7 +122,7 @@
 } : sign-message()
 
 // parse-order-message()
-// (cell -- sig seqno valid_until last_pubkey hash_only? request signatures)
+// (cell -- sig seqno valid_until last_pubkey hash_only? [request or hash] signatures)
 //
 // Decodes signed request data from a message body.
 {
@@ -134,8 +133,14 @@
     256 u@+
     dup srefs {
       1 i@+
-      ref@+ swap
-      dict@+
+      over {
+        ref@+ <s // convert to int
+          256 u@+
+        s>
+      } {
+        ref@+
+      } cond
+      swap dict@+
     } {
       null null null
       3 roll

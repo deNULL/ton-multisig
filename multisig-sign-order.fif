@@ -68,8 +68,6 @@ swap
 drop
 =: Keypairs
 
-Keypairs ~
-
 def? SaveFile {
   $1 =: SaveFile
 } ifnot

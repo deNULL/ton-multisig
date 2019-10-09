@@ -83,7 +83,7 @@ SeqNo ReqValidUntil SendMode IntMessage order-request() =: Request
 ."Signing order request: " Request <s csr. cr
 
 WalletAddr null
-  SeqNo -1 PrimaryPublicKey 0 Request Keypairs order-message() PrimaryPrivateKey sign-message()
+  SeqNo -1 PrimaryPublicKey false Request Keypairs order-message() PrimaryPrivateKey sign-message()
 external-message() =: ExtMessage
 
 ."New order external message: " ExtMessage <s csr. cr
