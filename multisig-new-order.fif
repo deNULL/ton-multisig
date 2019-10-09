@@ -1,10 +1,9 @@
 #!/usr/bin/env fift -s
 "multisig-utils.fif" include
 
-{ ."<basename> <dest-addr> <seqno> <amount> <keyindex-1> <keyindex-2>... [-B <body-boc>] [-O <output-boc>]" cr
-  ."Creates a request to a multisig wallet created by multisig-init.fif, with address loaded from file <basename>.addr "
-  ."and private keys from <basename>-<keyindex-N>.pk, and saves it into <output-boc>.boc ('ms-wallet-query.boc' by default)." cr
-  ."Note that <keyindex-N> are indices of the private keys (in range 1..n), separated by spaces."
+{ ."<wallet> <dest-addr> <seqno> <amount> <keyname-1> <keyname-2>... [-B <body-boc>] [-O <output-boc>]" cr
+  ."Creates a request to a multisig wallet created by multisig-init.fif, with address loaded from file <wallet>.addr "
+  ."and private keys from <keyname-i>.pk, and saves it into <output-boc>.boc ('ms-wallet-query.boc' by default)."
 } : usage()
 
 5 1000 check-arg-count()
@@ -41,7 +40,7 @@ null swap
 {
   dup 5 >=
 } { // keypairs i
-  dup BaseFile +"-" swap $() $+ +".pk" load-keypair
+  dup swap $() +".pk" load-keypair
   // keypairs i pubkey privkey
   def? PrimaryPublicKey {
     2dup

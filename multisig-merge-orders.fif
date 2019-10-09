@@ -11,7 +11,7 @@
 ."Loading message from " $1 type cr cr
 
 $1 file>B B>boc parse-external-message()
-=: MessageBody1 =: StateInit1 2constant WalletAddr1
+=: MessageBody1 =: StateInit1 2=: WalletAddr1
 
 ."dst_addr:     " WalletAddr1 .addr cr cr
 
@@ -29,7 +29,7 @@ drop // signature will be replaced
 ."Loading message from " $2 type cr cr
 
 $2 file>B B>boc parse-external-message()
-=: MessageBody2 =: StateInit2 2constant WalletAddr2
+=: MessageBody2 =: StateInit2 2=: WalletAddr2
 
 WalletAddr1 WalletAddr2
 roll <> -roll <> or abort"Expected wallet addresses to be equal"

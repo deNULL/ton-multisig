@@ -44,16 +44,42 @@
   runvm
 } : runvm()
 
+{
+  dup pair? {
+    unpair
+    dup null? {
+      drop
+    } {
+      @' print-list()
+    } cond
+  } if
+  ."    " .dump cr
+} : print-list()
+
 // ~
 // ( -- )
 // 
-// Similar to .s (prints current stack), but also surrounds it with '<!STACK>' and
-// '</!STACK>', so it's easier to see in the output.
+// Similar to .s (prints current stack), but also surrounds it with '<STACK>' and
+// '</STACK>', so it's easier to see in the output.
 
 {
-  cr ."<!STACK>" cr
-  .s
-  ."</!STACK>" cr cr
+  cr ."<STACK>" cr
+  depth
+  { dup 0> } {
+    dup pick
+    dup tuple? {
+      ."  LIST:[" cr
+      print-list() 
+      ."  ]"
+    } {
+      ."  "
+      .dump
+    } cond
+    cr
+    1-
+  } while
+  drop
+  ."</STACK>" cr cr
 } : ~
 
 // ="<string>"

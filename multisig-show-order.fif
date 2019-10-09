@@ -10,7 +10,7 @@
 ."Loading message from " $1 type cr cr
 
 $1 file>B B>boc parse-external-message()
-=: MessageBody =: StateInit 2constant Addr
+=: MessageBody =: StateInit 2=: Addr
 
 ."dst_addr:     " Addr .addr cr cr
 

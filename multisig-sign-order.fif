@@ -10,10 +10,12 @@
 
 2 1000 check-arg-count()
 
-."Loading message from " $1 type cr cr
+$1 +".boc" =: QueryName
 
-$1 file>B B>boc parse-external-message()
-=: MessageBody =: StateInit 2constant WalletAddr
+."Loading message from " QueryName type cr cr
+
+QueryName file>B B>boc parse-external-message()
+=: MessageBody =: StateInit 2=: WalletAddr
 
 ."dst_addr:     " WalletAddr .addr cr cr
 
@@ -35,13 +37,15 @@ dup 1- $() ="-O" {
 } if
 
 null
-Singatures 256 { 
-  // pubkey privkey
-  -rot cons
-  swap cons
+Signatures 256 { 
+  // signs pubkey privkey
+  64 B@+ s>
+  swap 256 u>B
+  rot cons cons
   -1
 } dictforeach
 drop
+
 
 // Append keypairs specified in command line
 swap
@@ -57,11 +61,14 @@ swap
   } ifnot
   swap
   3 roll
-  cons cons
+  cons
+  cons
   swap 1-
 } while
 drop
 =: Keypairs
+
+Keypairs ~
 
 def? SaveFile {
   $1 =: SaveFile

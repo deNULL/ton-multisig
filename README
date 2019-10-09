@@ -21,6 +21,8 @@ func -o"my/multisig-code.fif" -P smartcont/stdlib.fc my/multisig-code.fc
 - полезно иметь слово для вычисления id get-метода по его имени
 (#ifdef в FunC -> #ifdef в асме -> #define в Fift -> в зависимости от наличия либо выкидывать кусок кода, либо нет)
 
+- B@ выбрасывает Bytes?
+
 Создание:
 
 multisig-init.fif - создаем кошелек с n ключами, k требуется

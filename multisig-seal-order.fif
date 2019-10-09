@@ -2,7 +2,8 @@
 "multisig-utils.fif" include
 
 // Messages for the multisig wallet are signed two times.
-// First, the actual request to be sent. Second, the whole message (including the request and signatures from other owners).
+// First, the actual request to be sent.
+// Second, the whole message (including the request and signatures from other owners).
 // The whole message can be signed by any owner (in practice, by the last one who added a signature).
 // However, that means that his signature will be sent two times (thats 256 bits for pubkey + 512 bits for the signature).
 // We can reduce the size of the message if we remove his signature from the list of request's signatures
