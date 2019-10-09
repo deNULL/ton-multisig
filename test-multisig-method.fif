@@ -2,7 +2,8 @@
 "common-utils.fif" include
 
 {
-  ."<data-boc> <method-id> <args>..."
+  ."<data-boc> <method-id> <args>..." cr
+  ."Simulate calling a get method of a multisig wallet."
 } : usage()
 
 2 10000 check-arg-count()

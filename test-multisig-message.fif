@@ -2,7 +2,8 @@
 "common-utils.fif" include
 
 {
-  ."<old-data-boc> <message-boc> [<new-data-boc>]"
+  ."<old-data-boc> <message-boc> [<new-data-boc>]" cr
+  ."Simulate sending an external message to multisig wallet."
 } : usage()
 
 2 3 check-arg-count()

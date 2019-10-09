@@ -2,7 +2,7 @@
 "multisig-utils.fif" include
 
 { ."<n> [<k> <filename-base>]" cr
-  ."Simulate creation of a multisig wallet locally"
+  ."Simulate creation of a multisig wallet locally."
 } : usage()
 
 1 3 check-arg-count()
