@@ -1,4 +1,4 @@
-!/usr/bin/env fift -s
+#!/usr/bin/env fift -s
 "multisig-utils.fif" include
 
 // Messages for the multisig wallet are signed two times.
@@ -15,30 +15,20 @@
   ."Finishes request preparation by replacing extra request signature with a signature for the whole query."
 } : usage()
 
-2 4 check-arg-count()
+2 6 check-arg-count()
 
-."Loading message from " $1 type cr cr
+."Loading message from " $1 +".boc" type cr cr
 
-$1 file>B B>boc parse-external-message()
+$1 +".boc" file>B B>boc parse-external-message()
 =: MessageBody =: StateInit 2constant WalletAddr
 
 ."dst_addr:     " WalletAddr .addr cr cr
 
 StateInit null? not abort"Expected StateInit to be null"
 
-MessageBody parse-order-message()
-
-// sig seqno valid_until last_pubkey hash_only? request signatures
-
-=: Signatures =: Request =: HashOnly
-drop // last_pubkey will be replaced
-=: ValidUntil =: SeqNo
-drop // signature will be replaced
-
 $#
 dup 1- $() ="-s" {
-  forget SeqNo
-  dup $() =: SeqNo
+  dup $() parse-int =: SeqNo
   2 -
 } if
 dup 1- $() ="-O" {
@@ -46,11 +36,27 @@ dup 1- $() ="-O" {
   2 -
 } if
 
+
+MessageBody parse-order-message()
+
+// sig seqno valid_until last_pubkey hash_only? request signatures
+
+=: Signatures =: Request =: HashOnly
+drop // last_pubkey will be replaced
+=: ValidUntil
+def? SeqNo {
+  drop
+} {
+  =: SeqNo
+} cond
+drop // signature will be replaced
+
+
 def? SaveFile {
   $1 =: SaveFile
 } ifnot
 
-$3 +".pk" load-keypair
+$2 +".pk" load-keypair
 =: PrimaryPrivateKey
 =: PrimaryPublicKey
 
@@ -59,7 +65,7 @@ Signatures 256 {
   // signs signature privkey
   64 B@+ s>
   swap
-  dup PrimaryPublicKey = {
+  dup PrimaryPublicKey 256 B>u@ = {
     2drop // Remove PrimaryPublicKey from list of signatures (it will be added implicitly anyway)
   } {
     256 u>B

@@ -9,10 +9,24 @@
 2 10000 check-arg-count()
 
 // Having a word to compute method id by its name would be nice...
-$2 (number) 1- abort"Calling methods by their names is not supported now, use its numeric id" =: MethodId
+$2 ="seqno" { 85143 =: MethodId } if
+$2 ="pending_count" { 126687 =: MethodId } if
+$2 ="param_n" { 107113 =: MethodId } if
+$2 ="param_k" { 127692 =: MethodId } if
+$2 ="owners" { 84885 =: MethodId } if
+$2 ="pending" { 126129 =: MethodId } if
+$2 ="pending_signed_by" { 75417 =: MethodId } if
+def? MethodId {
+  $2 (number) 1- abort"Calling methods by their names is not supported now, use its numeric id" =: MethodId
+} ifnot
 "multisig-code.fif" include =: WalletCode
-$1 file>B B>boc =: WalletData
+$1 +".boc" file>B B>boc =: WalletData
 ."Data: " cr WalletData <s csr. cr
+
+3 { dup $# <= } {
+  dup $() parse-int swap
+  1+
+} while drop
 
 WalletCode WalletData MethodId runvm()
 
@@ -21,4 +35,4 @@ WalletCode WalletData MethodId runvm()
 
 ."Exit code: " ExitCode . cr
 
-."Resulting stack: " .s
+."Result:" ~

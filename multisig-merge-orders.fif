@@ -1,4 +1,4 @@
-!/usr/bin/env fift -s
+#!/usr/bin/env fift -s
 "multisig-utils.fif" include
 
 { ."<query1-boc> <query2-boc> <keyname> [-O <output-boc>] [-s <seqno>]" cr
@@ -8,9 +8,9 @@
 
 3 5 check-arg-count()
 
-."Loading message from " $1 type cr cr
+."Loading message from " $1 +".boc" type cr cr
 
-$1 file>B B>boc parse-external-message()
+$1 +".boc" file>B B>boc parse-external-message()
 =: MessageBody1 =: StateInit1 2=: WalletAddr1
 
 ."dst_addr:     " WalletAddr1 .addr cr cr
@@ -26,9 +26,9 @@ drop // last_pubkey will be replaced
 =: ValidUntil1 =: SeqNo1
 drop // signature will be replaced
 
-."Loading message from " $2 type cr cr
+."Loading message from " $2 +".boc" type cr cr
 
-$2 file>B B>boc parse-external-message()
+$2 +".boc" file>B B>boc parse-external-message()
 =: MessageBody2 =: StateInit2 2=: WalletAddr2
 
 WalletAddr1 WalletAddr2

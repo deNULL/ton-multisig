@@ -9,13 +9,13 @@
 
 $1 (number) 1- abort"n must be an integer number" =: n
 def? $2 { @' $2 (number) 1- abort"k must be an integer number" } { n } cond =: k
-def? $3 { @' $3 } { "new-multisig-wallet" } cond =: FileBase
+def? $3 { @' $3 } { "new-ms-wallet" } cond =: FileBase
 
 "multisig-code.fif" include =: WalletCode
 
 n k initial-data() =: WalletData
 
-0 -1 PrimaryPublicKey empty-message() PrimaryPrivateKey sign-message()
+0 -1 PrimaryPublicKey empty-message() PrimaryPrivateKey sign-message() <s
   WalletCode WalletData recv_external runvm()
 
 =: NewWalletData
@@ -24,4 +24,6 @@ n k initial-data() =: WalletData
 ."Exit code: " ExitCode . cr
 ."Updated data: " cr NewWalletData <s csr. cr
 
-NewWalletData 2 boc+>B "data-0.boc" B>file
+."Saving updated data to " FileBase +"-data-0.boc" type cr
+
+NewWalletData 2 boc+>B FileBase +"-data-0.boc" B>file

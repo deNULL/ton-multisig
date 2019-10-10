@@ -22,7 +22,7 @@
       } cond
       256 B>u@ // Converting pubkey to int
         // udict requires order: value(builder) key(pubkey) dict(keylist) n=256
-      rot 256 .s b>udict!
+      rot 256 b>udict!
       0= abort"Unable to store public key in the contract data"
         // .s -> data:builder index:int keylist:dict
       swap 1+ swap

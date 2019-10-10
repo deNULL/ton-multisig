@@ -10,11 +10,11 @@
 
 2 1000 check-arg-count()
 
-$1 +".boc" =: QueryName
+$1 =: QueryName
 
-."Loading message from " QueryName type cr cr
+."Loading message from " QueryName +".boc" type cr cr
 
-QueryName file>B B>boc parse-external-message()
+QueryName +".boc" file>B B>boc parse-external-message()
 =: MessageBody =: StateInit 2=: WalletAddr
 
 ."dst_addr:     " WalletAddr .addr cr cr

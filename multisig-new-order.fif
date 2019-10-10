@@ -1,15 +1,15 @@
 #!/usr/bin/env fift -s
 "multisig-utils.fif" include
 
-{ ."<wallet> <dest-addr> <seqno> <amount> <keyname-1> <keyname-2>... [-B <body-boc>] [-O <output-boc>]" cr
+{ ."<wallet> <dest-addr> <seqno> <amount> <keyname-1> <keyname-2>... [-B <body-boc>] [-O <output-boc>] [-E <seconds>]" cr
   ."Creates a request to a multisig wallet created by multisig-init.fif, with address loaded from file <wallet>.addr "
-  ."and private keys from <keyname-i>.pk, and saves it into <output-boc>.boc ('ms-wallet-query.boc' by default)."
+  ."and private keys from <keyname-i>.pk, and saves it into <output-boc>.boc ('<wallet>-query.boc' by default)." cr
+  ."You can specify how many seconds this order will be alive after the -E flag. By default, it will live forever."
 } : usage()
 
 5 1000 check-arg-count()
 
 true =: BounceFlag
--1 =: ReqValidUntil
 3 =: SendMode
 
 $1 =: BaseFile
@@ -22,16 +22,16 @@ BaseFile +".addr" load-address
 ."Source wallet address = " 2dup .addr cr 6 .Addr cr
 
 $#
+dup 1- $() ="-E" {
+  dup $() parse-int now + =: ReqValidUntil
+  2 -
+} if
 dup 1- $() ="-O" {
   dup $() =: SaveFile
   2 -
 } if
 dup 1- $() ="-B" {
   dup $() =: BodyFile
-  2 -
-} if
-dup 1- $() ="-O" { // Double check needed if order was "... -O savefile -B body-boc"
-  dup $() =: SaveFile
   2 -
 } if
 
@@ -58,17 +58,26 @@ drop
 PrimaryPrivateKey drop
 
 def? BodyFile {
-  @' BodyFile file>B B>boc
+  @' BodyFile +".boc" file>B B>boc
 } {
   <b 0 32 u, "TEST" $, b>
 } cond =: TransferBody
 
 def? SaveFile {
-  "ms-wallet-query" =: SaveFile
+  BaseFile +"-query" =: SaveFile
 } ifnot
+
 
 ."Creating new order to transfer " Amount .GR ."to account " DestAddr 2dup BounceFlag 7 + .Addr ." = " .addr 
 ."seqno=0x" SeqNo x. ."bounce=" BounceFlag . cr
+
+def? ReqValidUntil {
+  ."Expiry time is " @' ReqValidUntil . ", this order will be void after that date." cr
+} {
+  -1 =: ReqValidUntil
+  ."Expiry time is NOT set, if will be kept pending forever." cr
+} cond
+
 ."Body of transfer message is " TransferBody <s csr. cr
   
 // Create actual message to be sent when the order will be completed

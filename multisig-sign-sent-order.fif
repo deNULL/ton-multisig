@@ -2,7 +2,7 @@
 "multisig-utils.fif" include
 
 { ."<basename> <seqno> <request-hash> <keyname-1> <keyname-2>... [-O <output-boc>]" cr
-  ."Creates a query matching a pending request with the specified hash, signed by provided keys." cr
+  ."Creates query matching a pending request with the specified hash, signed by provided keys." cr
   ."Note that <keyname-N> is not the index of a private key, but its filename (without .pk extension)."
 } : usage()
 
@@ -45,7 +45,7 @@ drop
 PrimaryPrivateKey drop
 
 def? SaveFile {
-  "ms-wallet-query" =: SaveFile
+  BaseFile +"-query" =: SaveFile
 } ifnot
 
 ."Signing an existing order with hash = " RequestHash x. cr
