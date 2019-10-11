@@ -33,14 +33,14 @@ HashOnly null? {
 
                            ."request:" cr
   swap HashOnly {
-                                    ."  →  req_hash: 0x" . cr
+                                    ."  →  req_hash: 0x" x. cr
   } {
+    dup hash =: ReqHash
     <s 
       32 u@+ swap                   ."  ┌  req_seqno:       " . cr
       32 u@+ swap                   ."  │  req_valid_until: " . cr
       8 u@+  swap                   ."  │  req_mode:        " . cr
       ref@+                         ."  │  req_message:     " cr
-      dup hash =: ReqHash
       <s
         2 u@+ nip
         1 i@+ swap                  ."  │    bounce?        " dup =: BounceFlag { ."true" } { ."false" } cond cr
