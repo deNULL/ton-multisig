@@ -135,19 +135,19 @@ In case you've used the default (non-stripped down) version of the contract, it 
 
 List of available methods:
 * `seqno`
-  Returns the current stored value of seqno for this wallet. This method is available in the stripped-down version too.
+   Returns the current stored value of seqno for this wallet. This method is available in the stripped-down version too.
 * `pending_count`
-  Returns current number of pending orders.
+   Returns current number of pending orders.
 * `param_n`
-  Returns number of owners of this wallet.
+   Returns number of owners of this wallet.
 * `param_k`
-  Returns number of signatures required to execute an order.
+   Returns number of signatures required to execute an order.
 * `owners`
-  Returns List consisting of Tuples, in which the first component is a public key (as a number) of an owner, and the second is its internal index.
+   Returns List consisting of Tuples, in which the first component is a public key (as a number) of an owner, and the second is its internal index.
 * `pending`
-  Returns List consisting of Tuples with following values: `(req_hash, req_seqno, req_expiry, req_mode, req_sigcount, req_signatures, req_message)`.`req_signatures` is a bit mask, where bit I is set if this order collected the signature from the owner with that internal index.
+   Returns List consisting of Tuples with following values: `(req_hash, req_seqno, req_expiry, req_mode, req_sigcount, req_signatures, req_message)`.`req_signatures` is a bit mask, where bit I is set if this order collected the signature from the owner with that internal index.
 * `pending_signed_by(pubkey, signed?)`
-  Return List of pending orders, filtered by a pubkey (public key of an owner, passed as a number). If second param is `true`, returns only orders signed by that owner. Otherwise returns only orders NOT signed by him.
+   Return List of pending orders, filtered by a pubkey (public key of an owner, passed as a number). If second param is `true`, returns only orders signed by that owner. Otherwise returns only orders NOT signed by him.
 
 # Troubleshooting
 
