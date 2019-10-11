@@ -162,7 +162,7 @@
     ref@+ swap
   } maybe@+ // Data
   {
-    ref@+ swap
+    dict@+ swap
   } maybe@+ // Libs
   3 -roll triple swap
 } : parse-state-init()

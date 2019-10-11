@@ -1,15 +1,20 @@
 #!/usr/bin/env fift -s
 "multisig-utils.fif" include
 
-{ ."<n> [<k> <filename-base>] [-C <code-fif>]" cr
+{ ."<wallet> [<new-data-boc>] [-C <code-fif>]" cr
   ."Simulate creation of a multisig wallet locally."
 } : usage()
 
 1 3 check-arg-count()
 
-$1 (number) 1- abort"n must be an integer number" =: n
-def? $2 { @' $2 (number) 1- abort"k must be an integer number" } { n } cond =: k
-def? $3 { @' $3 } { "new-ms-wallet" } cond =: FileBase
+."Loading init message from " $1 +"-init-query.boc" type cr cr
+
+$1 +"-init-query.boc" file>B B>boc parse-external-message()
+=: WalletMessage =: StateInit 2drop
+
+StateInit untriple =: WalletLibs =: WalletCode =: WalletData
+
+def? $2 { @' $2 } { $1 +"-data-0" } cond =: FileBase
 
 $#
 dup 1- $() ="-C" {
@@ -20,30 +25,7 @@ dup 1- $() ="-C" {
   "code-getters.fif" include =: WalletCode
 } cond
 
-// Generating list of owners
-0 dictnew {
-  over <b swap 8 u, // Saving index to builder
-  FileBase +"-" 3 pick 1 + (.) $+ +".pk" load-generate-keypair // Loading/saving pubkey and privkey
-    // .s -> data:builder index:int keylist:dict builder pubkey:bytes privkey:bytes
-   
-  def? PrimaryPrivateKey {
-    drop
-  } { // no need for this key anymore
-    =: PrimaryPrivateKey
-    dup =: PrimaryPublicKey
-  } cond
-  256 B>u@ // Converting pubkey to int
-    // udict requires order: value(builder) key(pubkey) dict(keylist) n=256
-  rot 256 b>udict!
-  0= abort"Unable to store public key in the contract data"
-    // .s -> data:builder index:int keylist:dict
-  swap 1+ swap
-} n times nip =: WalletOwners
-
-0 0 n k WalletOwners null data() =: WalletData
-
-0 -1 PrimaryPublicKey empty-message() PrimaryPrivateKey sign-message() <s
-  recv_external WalletCode WalletData runvm()
+WalletMessage <s recv_external WalletCode WalletData runvm()
 
 =: NewWalletData
 =: ExitCode
@@ -51,6 +33,6 @@ dup 1- $() ="-C" {
 ."Exit code: " ExitCode . cr
 ."Updated data: " cr NewWalletData <s csr. cr
 
-."Saving updated data to " FileBase +"-data-0.boc" type cr
+."Saving updated data to " FileBase +".boc" type cr
 
-NewWalletData 2 boc+>B FileBase +"-data-0.boc" B>file
+NewWalletData 2 boc+>B FileBase +".boc" B>file
