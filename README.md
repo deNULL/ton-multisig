@@ -65,14 +65,14 @@ The following sections will explain how to perform all possible action with your
 
 You need to specify workchain id for your new order, as well as N (total number of keys) and K (number of keys required to complete an order).
 
-If K is omitted, it is set to N. You can set the name of your new wallet. The private keys will be stored in files <wallet>-1.pk, <wallet>-2.pk and so on. Using -C option you can choose the file with the smart contract's code (either 'code' or 'code-getters').
+If K is omitted, it is set to N. You can set the name of your new wallet. The private keys will be stored in files `<wallet>-1.pk`, `<wallet>-2.pk` and so on. Using -C option you can choose the file with the smart contract's code (either 'code' or 'code-getters').
 
-After running this command you should get a '<wallet>-init-query.boc' file. Upload it to TON (using `sendfile <wallet>-init-query.boc`) in your client to initialise your wallet (of course, you need to transfer some Grams to its address first).
+After running this command you should get a '`<wallet>-init-query.boc`' file. Upload it to TON (using `sendfile <wallet>-init-query.boc`) in your client to initialise your wallet (of course, you need to transfer some Grams to its address first).
 
 ## Adding more keys to a wallet initialisation request
 `./add-keys.fif <wallet> <keyname-1> <keyname-2>... [-O <output-boc>] [-k <k>]`
 
-Using this script you can add more owners **before initialisation of your smart contract**. You won't be able to change list of owners afterwards. Note that it will change the future address of the wallet (as it depends on the initial data). Private keys are loaded from (or stored to) files <keyname-1>.pk, <keyname-2>.pk and so on.
+Using this script you can add more owners **before initialisation of your smart contract**. You won't be able to change list of owners afterwards. Note that it will change the future address of the wallet (as it depends on the initial data). Private keys are loaded from (or stored to) files `<keyname-1>.pk`, `<keyname-2>.pk` and so on.
 
 Option -k allows you to change the K param (number of keys required to complete an order).
 
@@ -81,7 +81,7 @@ Option -k allows you to change the K param (number of keys required to complete 
 
 This script will generate a brand new order for money transfer from your multi-sig wallet. You can specify any number of private keys to sign it with.
 
-After that, upload it using `sendfile <wallet>-query.boc` (instead of '<wallet>-query' you can specify custom name using an -O option).
+After that, upload it using `sendfile <wallet>-query.boc` (instead of '`<wallet>-query`' you can specify custom name using an -O option).
 
 Option -B allows you to load custom message body for your future transfer.
 
