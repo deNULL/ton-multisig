@@ -32,7 +32,7 @@ $2 +".boc" file>B B>boc parse-external-message()
 =: MessageBody2 =: StateInit2 2=: WalletAddr2
 
 WalletAddr1 WalletAddr2
-roll <> -roll <> or abort"Expected wallet addresses to be equal"
+rot <> -rot <> or abort"Expected wallet addresses to be equal"
 
 StateInit2 null? not abort"Expected StateInit to be null"
 
@@ -96,8 +96,6 @@ Signatures2 256 {
 } dictforeach
 drop
 =: Keypairs
-
-."Signing order request: " Request1 <s csr. cr
 
 WalletAddr1 null
   SeqNo ValidUntil PrimaryPublicKey HashOnly Request Keypairs order-message() PrimaryPrivateKey sign-message()
