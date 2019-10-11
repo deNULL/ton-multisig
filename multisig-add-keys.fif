@@ -1,0 +1,83 @@
+#!/usr/bin/env fift -s
+"multisig-utils.fif" include
+
+{ ."<wallet> <keyname-1> <keyname-2>... [-O <output-boc>] [-k <k>]" cr
+  ."Loads init message from '<wallet>-init-query.boc' and adds specified keys to it." cr
+  ."Use -k option to override the k param (minimal number of signatures required to complete an order)."
+} : usage()
+
+2 1000 check-arg-count()
+
+."Loading init message from " $1 +"-init-query.boc" type cr cr
+
+$1 +"-init-query.boc" file>B B>boc parse-external-message()
+drop =: OldStateInit 2drop
+
+// Update StateInit
+OldStateInit untriple =: WalletLibs =: OldWalletData =: WalletCode
+
+OldWalletData parse-data() drop =: OldOwners =: OldK =: OldN drop drop
+
+// Generating list of owners
+$#
+dup 1- $() ="-k" {
+  dup $() =: NewK
+  2 -
+} if
+dup 1- $() ="-O" {
+  dup $() =: SaveFile
+  2 -
+} if
+
+OldOwners OldN rot { dup 1 >= } {
+  // owners_dict key_index arg_index
+  dup $() +".pk" load-generate-keypair
+  // owners_dict key_index arg_index pubkey privkey
+  def? PrimaryPublicKey {
+    2dup
+    =: PrimaryPrivateKey
+    =: PrimaryPublicKey
+  } ifnot
+  <b
+    4 pick 8 u, 
+    256 B>u@
+    // owners_dict key_index arg_index pubkey builder
+    swap 4 roll
+    // udict requires order: value(builder) key(pubkey) dict(owners) n=256
+  256 b>udict!
+  0= abort"Unable to store public key in the contract data"
+  // key_index arg_index owners_dict
+  rot 1+ rot 1-
+} while
+drop // arg_index not needed
+=: NewN =: NewOwners
+
+def? NewK {
+  OldK =: NewK
+} ifnot
+
+0 0 NewN NewK NewOwners null data() =: WalletData
+."WalletData: " WalletData <s csr. cr
+
+WalletCode NewWalletData WalletLibs state-init() =: StateInit
+."StateInit: " StateInit <s csr. cr
+
+WorkchainId StateInit hash 2constant WalletAddr
+."Updated wallet address = " WalletAddr .addr cr
+WalletAddr FileBase +".addr" save-address-verbose
+
+0 -1 PrimaryPublicKey empty-message() =: WalletMessageBody
+."Signing message: " WalletMessageBody <s csr. cr
+
+WalletAddr StateInit
+  WalletMessageBody PrimaryPrivateKey sign-message()
+external-message() =: ExtMessage
+
+def? SaveFile {
+  $1 +"-init-query" =: SaveFile
+} ifnot
+
+."External message for initialization is " ExtMessage <s csr. cr
+ExtMessage 2 boc+>B dup Bx. cr
+SaveFile +".boc" tuck B>file
+."(Saved wallet creating query to file " type .")" cr

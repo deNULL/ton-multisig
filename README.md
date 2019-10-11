@@ -1,3 +1,123 @@
+# Description
+
+This is a smart-contract for TON blockchain implementing basic multi-signature wallet. It was made by Denis Olshin as part of Telegram contest announced on 09/24/2019 (https://t.me/contest/102).
+
+Instructions below assume that you are using TON's lite-client with FunC and Fift binaries available at PATH, and that you're familiar with those tools.
+
+For details about building lite-client, please refer to https://github.com/ton-blockchain/ton/tree/master/lite-client-docs. For basic info about running Fift scripts and uploading messages to TON, please refer to https://github.com/ton-blockchain/ton/blob/master/doc/LiteClient-HOWTO.
+
+# Basics
+
+This directory contains following files:
+
+* `common-utils.fif` A Fift library with some helper functions, that could be useful for creating any kind of smart contract. You don't need to run this file.
+* `multisig-utils.fif` Similarly to `common-utils.fif`, this is a library file. However, it contains only functions specific to this particular multi-sig wallet implementation. Each other Fift script here includes it. You don't need to run this file either.
+* `multisig-code.fc` Code of this smart contract, written in FunC. Note that it does not include get-methods (except for `seqno` method).
+* `multisig-getters.fc` Get-methods of this smart contract. They are stored separately so you can upload your wallet code without them (it will still be functional, but will take less space).
+* `multisig-code.fif` Compiled version of `multisig-code.fc`. Below you'll find instructions how to recompile it yourself.
+* `multisig-code-getters.fif` Compiled version of `multisig-code.fc` + `multisig-getters.fc`.
+* `multisig-init.fif`, `multisig-new-order.fif`, `multisig-sign-order.fif`, `multisig-sign-sent-order.fif`, `multisig-merge-orders.fif`, `multisig-add-keys.fif`, `multisig-seal-order.fif`, `multisig-show-order.fif`, `multisig-show-state.fif`, `multisig-purge-expired.fif` Fift scripts for creating new wallet, creating new money transfer requests, signing them and so on. Below you'll find detailed explanations about all of them.
+* `test-multisig-init.fif` Fift script that simulates the initialisation of a wallet locally, without actually uploading it to blockchain.
+* `test-multisig-message.fif` Fift script that simulates sending a message to a wallet locally. Loads the original contract state and returns the modified one.
+* `test-multisig-method.fif` Fift script that simulates executing a get-method of a smart contract for a given state. It includes `multisig-code-getters.fif`, so it can call get-methods even if wallet was uploaded without them.
+
+If you wish to make modifications to the wallet's code, it's better to test it using `test-...` scripts without actually uploading it to the blockchain. The same can be done in case something goes wrong (see "Troubleshooting" section below).
+
+# How to use
+
+Multi-signature wallet is a wallet managed by some number N of private keys (fixed at the moment of wallet creation). It accepts requests for money transfers (or any other internal message from this wallet), signed by any subset of those keys.
+
+If a request was signed by M keys, where M > some number K (fixed at the moment of wallet creation as well), the corresponding message will be sent. Otherwise it will be stored as a pending request.
+
+Owners of the wallet can add their signatures to pending requests at any moment.
+
+Each request can optionally have expiry time set, so it will be void after that moment (even if missing signatures will arrive). Current implementation will keep it among pending requests until the next valid message will arrive.
+
+The following sections will explain how to perform all possible action with your multi-sig wallet.
+
+**NB**: Whenever you need to provide a file name as an argument to some Fift script, write it **without an extension**. The script will add the appropriate extension automatically. 
+
+## Initialising a new wallet
+`multisig-init.fif`
+
+## Adding more keys to a wallet initialisation request
+`multisig-add-keys.fif`
+
+## Creating an order for a new money transfer
+`multisig-new-order.fif`
+
+## Adding signatures to a newly created order
+`multisig-sign-order.fif`
+
+## Sealing an order before upload
+`multisig-seal-order.fif`
+
+## Creating (and signing) a copy of previously uploaded (pending) order
+`multisig-sign-sent-order.fif`
+
+## Merging two copies of the same order
+`multisig-merge-orders.fif`
+
+## Inspecting an order before upload
+`multisig-show-order.fif`
+
+## Inspecting wallet's state
+`multisig-show-state.fif`
+
+# Troubleshooting
+
+After the request is uploaded to TON, there's no practical way to check what's happening with it (until it will be accepted). So if something goes wrong and your message is not accepted by the wallet, you can only guess why.
+
+Fortunately, there's couple of scripts that will help in this situation. First, you need to perform `saveaccountdata <filename> <addr>` command in the TON client shell. This will produce a boc-file containing current state of your wallet.
+
+Now you can inspect it using `multisig-show-state.fif`. Alternatively, you can manually call get-methods of the contract using `test-multisig-method.fif` (it should produce the same info, but in raw format).
+
+But most importantly, you can run `test-multisig-message.fif` with a message file (that you were trying to upload) to simulate the execution of the smart contract, and check the TVM output. In addition to builtin errors, there are some error codes that could be thrown:
+
+* Error **33**. Invalid outer seqno. The current stored seqno is different from the one in the incoming message. If this is a request to add signature(s) to an existing order, you can use `multisig-sign-order.fif` or `multisig-seal-order.fif` with a `-s <seqno>` option to fix the seqno. Otherwise (if this is a message to create a new order), you need to re-create it using `multisig-new-order.fif`.
+* Error **34**. Invalid outer signature. The whole message has an incorrect signature.
+* Error **35**. Message is expired. The whole message has a valid_until field set and it's in the past. Note that the provided Fift scripts do not set this field (you can set the expiration time for an order, but not for a message containing it).
+* Error **36**. Unknown signatory of the message. Person who signed this message is not among owners of this wallet. 
+* Error **37**. Pending order not found. You provided a hash of some order, but it was not found among pending orders. It was either expired or never uploaded at all.
+* Error **38**. Expired order. You are trying to upload an order that has an expiration date in the past.
+* Error **39**. Invalid seqno in the new order. Newly added orders must contain a seqno matching the current seqno of the wallet. You need to create a new order (with `multisig-new-order.fif`) with the actual seqno and sign it again.
+* Error **40**. Unknown signatory of the order. Person who signed this order is not among owners of this wallet. 
+* Error **41**. Invalid order signature. One of the order's signatures is incorrect.
+
+# Implementation details and thoughts on possible alternatives
+
+As external messages by themselves are vulnerable for the replay attacks, some measures against them are required. For simple wallets it's done by introducing a seqno (sequence number) and/or valid_until field. Both of these fields are signed by the private key of wallet's owner.
+
+For multi-signature wallets this mechanism becomes tricky, as there are multiple owners of the same wallet, and multiple signatures can be included in the same message. There are different ways to implement this signing process. Let's discuss pros and cons for some of them.
+
+1. **Basic approach**. There's single seqno stored in smart contract's data, and a single seqno in the message. However, there's also a HashMap 256 (outside of the signed part of a message), mapping public keys of current signatories to their signatures.
+
+The benefit of this approach is that it's easy to implement.
+
+However, it has a noticable usability drawback. Imagine we create a message containing a new order. We include current seqno value in it, and then sign it with our private key, and send it (via email, for example) to other owners to sign. The problem is that now nobody of the owners should "touch" the wallet (which can be hard to enforce). Otherwise, any accepted message will increase the seqno and our signed message will become invalid. We would need to collect all signatures from the start.
+
+2. **Individual sequence numbers**. Instead of single seqno, the wallet's storage includes separate numbers for each owner. At the moment some owner decides to sign a message, he appends his own seqno to it, and then generates the signature of the resulting cell (there's no need to send seqno explicitly, as it is stored within the wallet, and different seqno's will lead to different signatures).
+
+This approach is slightly better than the previous one: if one of the owners updates the state of the wallet, while signatures are still being collected, it does not void the whole message (it will only make his signature invalid, so it can be seen as a way to recall a vote).
+
+Unfortunately, it will still require for owners to cooperate on some level (if one includes his signature into a to-be-sent message, it prevents him from sending any other signed messages to this wallet). Additionally, it requires to store extra data for each owner.
+
+3. **Double-signing approach**. What if we just exclude seqno from the signed part of a message? It makes collecting signatures very easy - as long as actual order does not change, each signature will remain valid. Of course, now we lost our protection against replay attack: anybody can just copy our signed message later, change seqno to the actual value, and re-send this order.
+
+We can fix that by adding one *outer* signature for the whole message (inluding the seqno). For that we can use any private key of the owners (and attach his public key to the message too). If other owner decides to attach more signatures, he'll just replace that public key with his own, and write his own signature for the resulting cell.
+
+The only problem is that now we are open for *internal* replay attacks. Outside attackers can not send duplicate orders, but any owner can (with other owners' signatures attached).
+
+But here we can notice that we only need to prevent adding new orders. As long as a message just adds signatures to an existing (pending) order, a duplicate won't change its state (as long as we are not counting duplicate signatures twice).
+
+To solve that, let's add an *inner* seqno to the message. It does not need to be always equal to the current seqno of the wallet - just at the moment when the order is added to the pending list.
+
+Now, if we want to collect multiple signatures via email (or other "slow process"), we can just add our own signature and upload the resulting order (we can think of this as a "create" call), which will freeze the inner seqno counter. After that we can start collecting signatures for that order (which can now be identified just by its hash).
+
+This is the approach I've chosen for this implementation. The another minor detail is that by default the last owner to sign an order attaches his signature two times. If we wish, we can remove the inner signature: the smart contract can consider the validity of the outer signature as our approval. After doing that we'll reduce the size of the message by about 768 bits, but other owners won't be able to add their inner signatures to it. (Refer to section "Sealing an order before upload" for details.)
+
+# DRAFT BELOW
+
 Сборка с геттерами:
 
 func -o"my/multisig-code.fif" -P smartcont/stdlib.fc my/multisig-code.fc my/multisig-code-getters.fc

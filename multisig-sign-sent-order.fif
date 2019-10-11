@@ -27,7 +27,7 @@ null swap
 {
   dup 4 >=
 } { // keypairs i
-  dup swap $() +".pk" load-keypair
+  dup $() +".pk" load-keypair
   // keypairs i pubkey privkey
   def? PrimaryPublicKey {
     2dup

@@ -40,7 +40,7 @@ tuple request_tuple(int hash, int seqno, int expiry, int mode, int sigcount, int
 
   ;; validate that signatory_pubkey is among stored keys
   var (owner, owner_found) = owners.udict_get?(256, signatory_pubkey);
-  throw_unless(35, owner_found);
+  throw_unless(36, owner_found);
 
   accept_message();
 
@@ -112,13 +112,13 @@ tuple request_tuple(int hash, int seqno, int expiry, int mode, int sigcount, int
       (req_sigcount, req_signatures) = (req_data~load_uint(8), req_data~load_uint(param_n));
     } else {
       ;; validate expiry
-      throw_if(36, req_expiry < now());
+      throw_if(38, req_expiry < now());
 
       ;; request should contain actual seqno of this contract,
       ;; but it's valid only when the first batch of signatures arrive
       ;; (it cannot increase, because it's included in signed part,
       ;; and after the first accepted message it won't be equal to the contract's seqno)
-      throw_unless(38, req_seqno == stored_seqno);
+      throw_unless(39, req_seqno == stored_seqno);
       pending_count += 1;
     }
 
@@ -142,11 +142,11 @@ tuple request_tuple(int hash, int seqno, int expiry, int mode, int sigcount, int
       if (f) {
         (owner, owner_found) = owners.udict_get?(256, pubkey);
         ;; this signature does not belong to any owner
-        throw_unless(39, owner_found);
+        throw_unless(40, owner_found);
 
         ;; check that signature is valid
         var req_signature = sign~load_bits(512);
-        throw_unless(40, check_signature(req_hash, req_signature, pubkey));
+        throw_unless(41, check_signature(req_hash, req_signature, pubkey));
       }
     } until (~ f);
 

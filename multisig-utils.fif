@@ -1,37 +1,34 @@
 "common-utils.fif" include
 
-// initial-data()
-// (n k -- cell)
+// data()
+// (seqno pending_count n k owners pending -- cell)
+//
+// Builds a cell containing wallet's data.
 {
   <b
-    0 32 u,               // seqno
-    0 16 u,               // pending#
-    rot dup 3 -roll 8 u,  // n
-    swap 8 u,             // k
-    // Generating list of owners
-    0 dictnew {
-      over <b swap 8 u, // Saving index to builder
-      @' FileBase +"-" 3 pick 1 + (.) $+ +".pk" load-generate-keypair // Loading/saving pubkey and privkey
-        // .s -> data:builder index:int keylist:dict builder pubkey:bytes privkey:bytes
-       
-      def? PrimaryPrivateKey {
-        drop
-      } { // no need for this key anymore
-        =: PrimaryPrivateKey
-        dup =: PrimaryPublicKey
-      } cond
-      256 B>u@ // Converting pubkey to int
-        // udict requires order: value(builder) key(pubkey) dict(keylist) n=256
-      rot 256 b>udict!
-      0= abort"Unable to store public key in the contract data"
-        // .s -> data:builder index:int keylist:dict
-      swap 1+ swap
-    } 4 roll times
-    swap drop
-    dict,             // owners
-    null dict,        // pending
+    6 roll 32 u,      // seqno
+    5 roll 16 u,      // pending#
+    4 roll 8 u,       // n
+    3 roll 8 u,       // k
+    rot dict,         // owners
+    swap dict,        // pending
   b>
-} : initial-data()
+} : data()
+
+// parse-data()
+// (cell -- seqno pending_count n k owners pending)
+//
+// Decodes data stored in the wallet's persistent storage.
+{
+  <s
+    32 u@+
+    16 u@+
+    8 u@+
+    8 u@+
+    dict@+
+    dict@+
+  s>
+} : parse-data()
 
 // empty-message()
 // (seqno valid_until public_key -- slice)
