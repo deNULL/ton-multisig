@@ -10,16 +10,26 @@ For details about building lite-client, please refer to https://github.com/ton-b
 
 This directory contains following files:
 
-* `common-utils.fif` A Fift library with some helper functions, that could be useful for creating any kind of smart contract. You don't need to run this file.
-* `multisig-utils.fif` Similarly to `common-utils.fif`, this is a library file. However, it contains only functions specific to this particular multi-sig wallet implementation. Each other Fift script here includes it. You don't need to run this file either.
-* `code.fc` Code of this smart contract, written in FunC. Note that it does not include get-methods (except for `seqno` method).
-* `getters.fc` Get-methods of this smart contract. They are stored separately so you can upload your wallet code without them (it will still be functional, but will take less space).
-* `code.fif` Compiled version of `code.fc`. Below you'll find instructions how to recompile it yourself.
-* `code-getters.fif` Compiled version of `code.fc` + `getters.fc`.
-* `init.fif`, `new-order.fif`, `sign-order.fif`, `sign-sent-order.fif`, `merge-orders.fif`, `add-keys.fif`, `seal-order.fif`, `show-order.fif`, `show-state.fif`, `purge-expired.fif` Fift scripts for creating new wallet, creating new money transfer requests, signing them and so on. Below you'll find detailed explanations about all of them.
-* `test-init.fif` Fift script that simulates the initialisation of a wallet locally, without actually uploading it to blockchain.
-* `test-message.fif` Fift script that simulates sending a message to a wallet locally. Loads the original contract state and returns the modified one.
-* `test-method.fif` Fift script that simulates executing a get-method of a smart contract for a given state. It includes `code-getters.fif`, so it can call get-methods even if wallet was uploaded without them.
+* `common-utils.fif`
+   A Fift library with some helper functions, that could be useful for creating any kind of smart contract. You don't need to run this file.
+* `multisig-utils.fif`
+   Similarly to `common-utils.fif`, this is a library file. However, it contains only functions specific to this particular multi-sig wallet implementation. Each other Fift script here includes it. You don't need to run this file either.
+* `code.fc`
+   Code of this smart contract, written in FunC. Note that it does not include get-methods (except for `seqno` method).
+* `getters.fc`
+   Get-methods of this smart contract. They are stored separately so you can upload your wallet code without them (it will still be functional, but will take less space).
+* `code.fif`
+   Compiled version of `code.fc`. Below you'll find instructions how to recompile it yourself.
+* `code-getters.fif`
+   Compiled version of `code.fc` + `getters.fc`.
+* `init.fif`, `new-order.fif`, `sign-order.fif`, `sign-sent-order.fif`, `merge-orders.fif`, `add-keys.fif`, `seal-order.fif`, `show-order.fif`, `show-state.fif`, `purge-expired.fif`
+   Fift scripts for creating new wallet, creating new money transfer requests, signing them and so on. Below you'll find detailed explanations about all of them.
+* `test-init.fif`
+   Fift script that simulates the initialisation of a wallet locally, without actually uploading it to blockchain.
+* `test-message.fif`
+   Fift script that simulates sending a message to a wallet locally. Loads the original contract state and returns the modified one.
+* `test-method.fif`
+   Fift script that simulates executing a get-method of a smart contract for a given state. It includes `code-getters.fif`, so it can call get-methods even if wallet was uploaded without them.
 
 If you wish to make modifications to the wallet's code, it's better to test it using `test-...` scripts without actually uploading it to the blockchain. The same can be done in case something goes wrong (see "Troubleshooting" section below).
 
@@ -31,7 +41,7 @@ Run these commands (`<path-to-source>` here is the root directory with the TON s
 
 ```
 func -o"code-getters.fif" -P <path-to-source>/crypto/smartcont/stdlib.fc code.fc getters.fc
-func -o"code.fif" -P <path-to-source>/src/crypto/smartcont/stdlib.fc code.fc
+func -o"code.fif" -P <path-to-source>/crypto/smartcont/stdlib.fc code.fc
 ```
 
 This should rebuild files `code-getters.fif` (full version of the wallet) and `code.fif` (stripped-down version, without getters). Now you can use `init.fif` to init your wallet (see "Initialising a new wallet" section below).
@@ -87,19 +97,28 @@ Now you can inspect it using `show-state.fif`. Alternatively, you can manually c
 
 But most importantly, you can run `test-message.fif` with a message file (that you were trying to upload) to simulate the execution of the smart contract, and check the TVM output. In addition to builtin errors, there are some error codes that could be thrown:
 
-* Error **33**. *Invalid outer seqno*. The current stored seqno is different from the one in the incoming message. If this is a request to add signature(s) to an existing order, you can use `sign-order.fif` or `seal-order.fif` with a `-s <seqno>` option to fix the seqno. Otherwise (if this is a message to create a new order), you need to re-create it using `new-order.fif`.
-* Error **34**. *Invalid outer signature*. The whole message has an incorrect signature.
-* Error **35**. *Message is expired*. The whole message has a valid_until field set and it's in the past. Note that the provided Fift scripts do not set this field (you can set the expiration time for an order, but not for a message containing it).
-* Error **36**. *Unknown signatory of the message*. Person who signed this message is not among owners of this wallet. 
-* Error **37**. *Pending order not found*. You provided a hash of some order, but it was not found among pending orders. It was either expired or never uploaded at all.
-* Error **38**. *Expired order*. You are trying to upload an order that has an expiration date in the past.
-* Error **39**. *Invalid seqno in the new order*. Newly added orders must contain a seqno matching the current seqno of the wallet. You need to create a new order (with `new-order.fif`) with the actual seqno and sign it again.
-* Error **40**. *Unknown signatory of the order*. Person who signed this order is not among owners of this wallet. 
-* Error **41**. *Invalid order signature*. One of the order's signatures is incorrect.
+* Error **33**. *Invalid outer seqno*.
+   The current stored seqno is different from the one in the incoming message. If this is a request to add signature(s) to an existing order, you can use `sign-order.fif` or `seal-order.fif` with a `-s <seqno>` option to fix the seqno. Otherwise (if this is a message to create a new order), you need to re-create it using `new-order.fif`.
+* Error **34**. *Invalid outer signature*.
+   The whole message has an incorrect signature.
+* Error **35**. *Message is expired*.
+   The whole message has a valid_until field set and it's in the past. Note that the provided Fift scripts do not set this field (you can set the expiration time for an order, but not for a message containing it).
+* Error **36**. *Unknown signatory of the message*.
+   Person who signed this message is not among owners of this wallet. 
+* Error **37**. *Pending order not found*.
+   You provided a hash of some order, but it was not found among pending orders. It was either expired or never uploaded at all.
+* Error **38**. *Expired order*.
+   You are trying to upload an order that has an expiration date in the past.
+* Error **39**. *Invalid seqno in the new order*.
+   Newly added orders must contain a seqno matching the current seqno of the wallet. You need to create a new order (with `new-order.fif`) with the actual seqno and sign it again.
+* Error **40**. *Unknown signatory of the order*.
+   Person who signed this order is not among owners of this wallet. 
+* Error **41**. *Invalid order signature*.
+   One of the order's signatures is incorrect.
 
 # Fift words conventions
 
-Fift language is quite flexible, but it can be difficult to read. There's two main reason for that: stack juggling and no strict conventions for word names. To make the code more readable, some custom conventions were introduced within this repository:
+Fift language is quite flexible, but it can be difficult to read. There's two main reasons for that: stack juggling and no strict conventions for word names. To make the code more readable, some custom conventions were introduced within this repository:
 
 `kebab-case-words()` are helper functions (defined in `common-utils.fif` or `multisig-utils.fif`). Note that the name includes the parentheses at the end. (The only exceptions are `maybe,` and `maybe@+`)
 
