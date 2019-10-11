@@ -29,10 +29,10 @@ As was mentioned above, the smart contract code is located in `multisig-code.fc`
 
 Run these commands:
 
-``
-func -o"multisig-code-getters.fif" -P smartcont/stdlib.fc multisig-code.fc multisig-code-getters.fc
-func -o"multisig-code.fif" -P smartcont/stdlib.fc multisig-code.fc
-``
+```
+func -o"multisig-code-getters.fif" -P ../lite-client/crypto/smartcont/stdlib.fc multisig-code.fc multisig-getters.fc
+func -o"multisig-code.fif" -P ../lite-client/crypto/smartcont/stdlib.fc multisig-code.fc
+```
 
 This should rebuild files `multisig-code-getters.fif` (full version of the wallet) and `multisig-code.fif` (stripped-down version, without getters). Now you can use `multisig-init.fif` to init your wallet (see "Initialising a new wallet" section below).
 
