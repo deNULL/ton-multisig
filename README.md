@@ -61,31 +61,93 @@ The following sections will explain how to perform all possible action with your
 **NB**: Whenever you need to provide a file name as an argument to some Fift script, write it **without an extension**. The script will add the appropriate extension automatically. 
 
 ## Initialising a new wallet
-`init.fif`
+`./init.fif <workchain-id> <n> [<k> <filename-base>] [-C <code-fif>]`
+
+You need to specify workchain id for your new order, as well as N (total number of keys) and K (number of keys required to complete an order).
+
+If K is omitted, it is set to N. You can set the name of your new wallet. The private keys will be stored in files <wallet>-1.pk, <wallet>-2.pk and so on. Using -C option you can choose the file with the smart contract's code (either 'code' or 'code-getters').
+
+After running this command you should get a '<wallet>-init-query.boc' file. Upload it to TON (using `sendfile <wallet>-init-query.boc`) in your client to initialise your wallet (of course, you need to transfer some Grams to its address first).
 
 ## Adding more keys to a wallet initialisation request
-`add-keys.fif`
+`./add-keys.fif <wallet> <keyname-1> <keyname-2>... [-O <output-boc>] [-k <k>]`
+
+Using this script you can add more owners **before initialisation of your smart contract**. You won't be able to change list of owners afterwards. Note that it will change the future address of the wallet (as it depends on the initial data). Private keys are loaded from (or stored to) files <keyname-1>.pk, <keyname-2>.pk and so on.
+
+Option -k allows you to change the K param (number of keys required to complete an order).
 
 ## Creating an order for a new money transfer
-`new-order.fif`
+`./new-order.fif <wallet> <dest-addr> <seqno> <amount> <keyname-1> <keyname-2>... [-B <body-boc>] [-O <output-boc>] [-E <seconds>]`
+
+This script will generate a brand new order for money transfer from your multi-sig wallet. You can specify any number of private keys to sign it with.
+
+After that, upload it using `sendfile <wallet>-query.boc` (instead of '<wallet>-query' you can specify custom name using an -O option).
+
+Option -B allows you to load custom message body for your future transfer.
+
+If you use option -E, your order will be valid only **for the next number of seconds you specified**. After that, it won't be completed even if missing signatures will arrive.
 
 ## Adding signatures to a newly created order
-`sign-order.fif`
+`./sign-order.fif <query-boc> <keyname-1> <keyname-2>... [-O <output-boc>] [-s <seqno>]`
+
+Before uploading a new order, you can add more signatures to it using this script.
+
+If you're adding signatures to a previously uploaded order, you should update the seqno to the actual value using the -s option. Note that this won't work for newly created order - if you change the seqno, all signatures stored in it previously will become invalid.
 
 ## Sealing an order before upload
-`seal-order.fif`
+`./seal-order.fif <query-boc> <keyname> [-O <output-boc>] [-s <seqno>]`
+
+This script can be used as a final preparation before uploading an order to the network. It will reduce the size of the prepared message (by about 768 bits). Note that you should upload it right after that (if you add new signatures to it, you will lose the one that was stripped away).
+
+Usage of this script is totally optional.
 
 ## Creating (and signing) a copy of previously uploaded (pending) order
-`sign-sent-order.fif`
+`./sign-sent-order.fif <wallet> <seqno> <request-hash> <keyname-1> <keyname-2>... [-O <output-boc>]`
+
+After an order is sent, it's checked by the smart contract. If it contains enough signatures, it will be executed right away, otherwise it will be stored in the list of pending orders.
+
+This script allows you to prepare a new request for such pending order. First, you need to obtain it's hash — either via `show-order.fif` (before uploading it) or via `show-state.fif` (see below for details). Alternatively, if you uploaded the smart contract with the get-methods included, you can call `pending` or `pending_signed_by` to inspect the list of pending orders. The hash is the first number in the returned lists.
+
+After a request to update an existing order is created, it can be used exactly like the original one — you can add signatures with `sign-order.fif`, merge it with its copy (or the original order) with `merge-orders.fif`, seal it with `seal-order.fif` or inspect its contents with `show-order.fif`.
 
 ## Merging two copies of the same order
-`merge-orders.fif`
+`./merge-orders.fif <query1-boc> <query2-boc> <keyname> [-O <output-boc>] [-s <seqno>]`
+
+If you happen to have two copies of the same order (signed by different parties), you can merge them together with this script. Of course, you need to be an owner to do that.
+
+If you won't specify `seqno` with a -s option, it will be selected automatically as maximum seqno of the two request.
 
 ## Inspecting an order before upload
-`show-order.fif`
+`./show-order.fif <query-boc>`
+
+You can use this script before signing or uploading an order to validate its contents (message body, destination, amount of money to transfer, and list of already added signatures).
 
 ## Inspecting wallet's state
-`show-state.fif`
+`./show-state.fif <data-boc>`
+
+This script will help to examine the current state of the wallet. First, you need to download its state using the `saveaccountdata <filename> <addr>` command in the shell of your client. After that you can pass the generated boc-file to this script.
+
+It should outputed detailed info about wallet's params, list of its owners, and list of currently pending orders. Alternatively, you can use get-methods to inspect those values (see the next section).
+
+# Get methods
+
+In case you've used the default (non-stripped down) version of the contract, it will include some get-methods. You can run them in the TON client using the `runmethod` command. Note that they return raw data, so you may prefer using `show-state.fif` instead (see "Inspecting wallet's state" section). 
+
+List of available methods:
+* `seqno`
+  Returns the current stored value of seqno for this wallet. This method is available in the stripped-down version too.
+* `pending_count`
+  Returns current number of pending orders.
+* `param_n`
+  Returns number of owners of this wallet.
+* `param_k`
+  Returns number of signatures required to execute an order.
+* `owners`
+  Returns List consisting of Tuples, in which the first component is a public key (as a number) of an owner, and the second is its internal index.
+* `pending`
+  Returns List consisting of Tuples with following values: `(req_hash, req_seqno, req_expiry, req_mode, req_sigcount, req_signatures, req_message)`.`req_signatures` is a bit mask, where bit I is set if this order collected the signature from the owner with that internal index.
+* `pending_signed_by(pubkey, signed?)`
+  Return List of pending orders, filtered by a pubkey (public key of an owner, passed as a number). If second param is `true`, returns only orders signed by that owner. Otherwise returns only orders NOT signed by him.
 
 # Troubleshooting
 
@@ -157,198 +219,3 @@ For multi-signature wallets this mechanism becomes tricky, as there are multiple
    Now, if we want to collect multiple signatures via email (or other "slow process"), we can just add our own signature and upload the resulting order (we can think of this as a "create" call), which will freeze the inner seqno counter. After that we can start collecting signatures for that order (which can now be identified just by its hash).
 
    This is the approach I've chosen for this implementation. The another minor detail is that by default the last owner to sign an order attaches his signature two times, which is excessive. If we wish, we can remove the inner signature: the smart contract can consider the validity of the outer signature as the confirmation of our approval. After doing so we'll reduce the size of the message by about 768 bits, but other owners won't be able to add their inner signatures to it. (Refer to section "Sealing an order before upload" for details.)
-
-# DRAFT BELOW
-
-Сборка с геттерами:
-
-func -o"my/code.fif" -P smartcont/stdlib.fc my/code.fc my/code-getters.fc
-
-Без:
-
-func -o"my/code.fif" -P smartcont/stdlib.fc my/code.fc
-
-Баги/улучшения:
-
-- не хватает метода udict_delete? (по аналогии с idict_delete?)
-
-- зависание при использовании метода unpack_request
-
-- ошибка с UNTILEND (в коде garbage collector'а)
-
-- отказ от get-методов в пользу работы с данными из фифта (экономия места)
-
-- было бы хорошо иметь механизм управления ассемблерным кодом из фифта (типа #ifdef), чтобы корректировать генерируемый код
-
-- полезно иметь слово для вычисления id get-метода по его имени
-(#ifdef в FunC -> #ifdef в асме -> #define в Fift -> в зависимости от наличия либо выкидывать кусок кода, либо нет)
-
-- B@ выбрасывает Bytes?
-
-Создание:
-
-init.fif - создаем кошелек с n ключами, k требуется
-
-
-append-keys.fif - добавляем ключ в код создания кошелька (TODO)
-
-
-
-
-
-Apart from this basic functionality of the smart contract, you have to implement 
-
-= get-methods that list all pending (partially signed) orders
-orders
-
-= get-methods that list all pending orders signed or not signed by a particular public key.
-signedBy
-
-
-Your interface Fift scripts should help the user:
-
-= to create (BoC files with serialized) external messages with completely new orders (similarly to `wallet.fif` used by the simple wallet smart contract)
-
-multisig-new-order.fif - создаем запрос на задание
-
-
-= to extract and show the internal message (especially its destination address and value) and the list of signatures from a previously serialized external messages (loaded from a file)
-
-multisig-show-order.fif - показать данные в запросе
-
-
-= to add new signatures to such external messages using a local private key file (so that the holder of one private key might create an external message and send it by e-mail to the holder of another private key, who could add the second signature to the next holder and so on until the necessary amount of signatures is collected offline)
-
-multisig-sign-order.fif - добавляем подпись в запрос
-
-
-= to merge two external messages with the same body, but with different signature sets, into one external message with the union of these signature sets,
-
-multisig-merge-orders.fif - объединить два запроса на одинаковое задание
-
-
-= to create and sign a "new order" external message corresponding to a partially signed order recovered from the current state of the blockchain using one of the get-methods indicated above.
-
-multisig-sign-sent-order.fif - импортируем существующее задание и делаем запрос на добавление подписи в него
-
-
-
-
-Структура data:
-
-32 бита: seqno
-16 бит: pending, число запросов, ожидающих подписей
-8 бит: n, число ключей в контракте
-8 бит: k, число ключей, необходимых для отправки запроса
-
-dict (публичный ключ => его 8 бит индекс)
-dict (хэш запроса => инфо)
-  для каждого запроса:
-  8 бит: s, число подписей
-  ref: тело запроса + mode (как в обычном кошельке) + expire_at
-  dict (8 бит индекс ключа => 512-битная подпись)
-
-
-Issues:
-как использовать Bytes в кач-ве ключей dict?
-как использовать Integer в кач-ве значений?
-
-
-Сообщение:
-
-512 бит подпись
-32 бита: seqno
-32 бита: valid_until
-256 бит пуб ключ того, кто подписал _сообщение_ <- по факту тут будет ключ того, кто последним добавлял свою подпись
-ref: тело запроса + mode (как в обычном кошельке) + expire_at
-dict: 256-бит пубключ => 512-бит подпись запроса
-
-
-
-Потрачено на инициализацию (5/3):
-20000000000 - 19984905999 = 15094001 nano = 0.015 Gram
-
-
-base_wallet: 108.481639584 -> 108.581536356 -> 108.704436350
-
-Варианты мультисига:
-
-1. статичный код vs обновляемый
-
-По дефолту механизм обновления кода не предусмотрен. Альтернатива - можно сделать возможность обновления кода, тогда право это делать дается одному ключу (первому?). Либо делать это таким же голосованием. (Пока что без обновления)
-
-2. с подписью всего сообщения или без
-
-Вариант без подписи всего сообщения - это если использовать один seqno, но тогда нельзя параллельно собирать подписи на два разных запроса.
-Поэтому пилим двойную подпись - сначала тело самого запрос (с его seqno), потом сообщение целиком (с текущим seqno).
-У последнего будет две подписи, поэтому есть спецскрипт для отрезания лишней.
-
-3. с get-методами или без
-
-get-методы не очень полезны, если код статичный и обработка ответа все равно требует вызова fift-скриптов. Поэтому по умолчанию fift скрипты просто импортируют multisig-code.fif и с помощью него декодируют сериализированные данные.
-
-Для заливки в блокчейн по умолчанию юзается multisig-code-nogetters.fc, который покороче.
-
-
-
-Тесткейсы:
-
-Создать кошелек 5/4
-
-Проверить через show-order
-
-Отправить в сеть
-
-Создать запрос 0 с подписями 1 3 5 и коротким временем жизни, проверить
-
-Создать запрос 1 с подписями 2 3 4 5, проверить
-
-Отправить 1 в сеть
-
-Запаковать запрос 0 с ключом 1 и новым seqno
-
-Отправить 0 в сеть
-
-Проверить, что запрос выполнился, деньги переведены
-
-Создать запрос 2 с подписью 4, проверить
-
-Отправить 2 в сеть
-
-Проверить, что запрос попал в pending, в pending с 4 подписью, в pending без 5 подписи
-
-Создать запрос 3 с подписями 1 2, проверить
-
-Добавить подпись 3 в запрос 3, проверить
-
-Отправить 3 в сеть
-
-Проверить, что оба запроса в pending
-
-Создать копию запроса 2 с подписями 4 и 5, проверить
-
-Отправить копию в сеть
-
-Проверить, что в запросе 2 две подписи
-
-Создать новую копию запроса 2 с подписями 1, 4 и 2, проверить
-
-Объединить новую копию и исходный запрос, проверить
-
-Запаковать объединение 2 ключом, проверить
-
-Отправить объединение в сеть
-
-Проверить, что 2 запрос выполнился
-
-Добавить 1 подпись в исходный 3 запрос
-
-Отправить
-
-Проверить, что счетчик не поменялся
-
-Добавить 5 подпись к предыдущему запросу
-
-Отправить
-
-Проверить, что деньги ушли
