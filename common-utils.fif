@@ -28,9 +28,6 @@
 
 {
   <{
-    // Replace implicit method id = 0 to the custom one
-    DROP swap PUSHINT
-
     // Simulate SmartContractInfo in the c7 register 
     0 PUSHINT
     0 PUSHINT

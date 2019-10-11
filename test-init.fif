@@ -17,13 +17,33 @@ dup 1- $() ="-C" {
   2 -
 } {
   // Import the actual smart contract code
-  "multisig-code-getters.fif" include =: WalletCode
+  "code-getters.fif" include =: WalletCode
 } cond
 
-n k initial-data() =: WalletData
+// Generating list of owners
+0 dictnew {
+  over <b swap 8 u, // Saving index to builder
+  FileBase +"-" 3 pick 1 + (.) $+ +".pk" load-generate-keypair // Loading/saving pubkey and privkey
+    // .s -> data:builder index:int keylist:dict builder pubkey:bytes privkey:bytes
+   
+  def? PrimaryPrivateKey {
+    drop
+  } { // no need for this key anymore
+    =: PrimaryPrivateKey
+    dup =: PrimaryPublicKey
+  } cond
+  256 B>u@ // Converting pubkey to int
+    // udict requires order: value(builder) key(pubkey) dict(keylist) n=256
+  rot 256 b>udict!
+  0= abort"Unable to store public key in the contract data"
+    // .s -> data:builder index:int keylist:dict
+  swap 1+ swap
+} n times nip =: WalletOwners
+
+0 0 n k WalletOwners null data() =: WalletData
 
 0 -1 PrimaryPublicKey empty-message() PrimaryPrivateKey sign-message() <s
-  WalletCode WalletData recv_external runvm()
+  recv_external WalletCode WalletData runvm()
 
 =: NewWalletData
 =: ExitCode

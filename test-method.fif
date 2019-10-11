@@ -28,7 +28,7 @@ dup 1- $() ="-C" {
   2 -
 } {
   // Import the actual smart contract code
-  "multisig-code-getters.fif" include =: WalletCode
+  "code-getters.fif" include =: WalletCode
 } cond
 
 3 { 2dup > } {
@@ -36,7 +36,7 @@ dup 1- $() ="-C" {
   1+
 } while 2drop
 
-WalletCode WalletData MethodId runvm()
+MethodId WalletCode WalletData runvm()
 
 =: NewWalletData
 =: ExitCode

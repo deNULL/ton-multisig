@@ -20,10 +20,10 @@ dup 1- $() ="-C" {
   2 -
 } {
   // Import the actual smart contract code
-  "multisig-code-getters.fif" include =: WalletCode
+  "code-getters.fif" include =: WalletCode
 } cond
 
-WalletMessage <s WalletCode OldWalletData recv_external runvm()
+WalletMessage <s recv_external WalletCode OldWalletData runvm()
 
 =: NewWalletData
 =: ExitCode
