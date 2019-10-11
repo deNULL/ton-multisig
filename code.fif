@@ -1,4 +1,4 @@
-// automatically generated from `../lite-client/crypto/smartcont/stdlib.fc` `multisig-code.fc` 
+// automatically generated from `../src/crypto/smartcont/stdlib.fc` `multisig-code.fc` 
 PROGRAM{
   DECLPROC recv_internal
   DECLPROC recv_external

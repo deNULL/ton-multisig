@@ -30,18 +30,6 @@
   s>
 } : parse-data()
 
-// empty-message()
-// (seqno valid_until public_key -- slice)
-//
-// Builds an empty (with no requests) message body, returning it as a Cell.
-{
-  <b
-    3 roll 32 u, // seqno, initially 0
-    rot 32 i,    // valid_until
-    swap B,      // public_key
-  b>
-} : empty-message()
-
 // order-request()
 // (req_seqno req_valid_until req_mode req_body -- cell)
 //
@@ -54,6 +42,18 @@
     swap ref,
   b>
 } : order-request()
+
+// empty-message()
+// (seqno valid_until public_key -- slice)
+//
+// Builds an empty (with no requests) message body, returning it as a Cell.
+{
+  <b
+    3 roll 32 u, // seqno, initially 0
+    rot 32 i,    // valid_until
+    swap B,      // public_key
+  b>
+} : empty-message()
 
 // order-message()
 // (seqno valid_until public_key hash_only? [request or hash] keypairs -- slice)

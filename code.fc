@@ -1,8 +1,5 @@
 ;; Multi-signature wallet smart contract
 
-;; Missing from stblib.fc
-(cell, int) udict_delete?(cell dict, int key_len, int index) asm(index dict key_len) "DICTUDEL";
-
 tuple request_tuple(int hash, int seqno, int expiry, int mode, int sigcount, int signatures, cell message)
   asm(hash seqno expiry mode sigcount signatures message) "7 TUPLE";
 
