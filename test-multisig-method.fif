@@ -2,7 +2,7 @@
 "common-utils.fif" include
 
 {
-  ."<data-boc> <method-id> <args>..." cr
+  ."<data-boc> <method-id> <args>... [-C <code-fif>]" cr
   ."Simulate calling a get method of a multisig wallet."
 } : usage()
 
@@ -19,14 +19,22 @@ $2 ="pending_signed_by" { 75417 =: MethodId } if
 def? MethodId {
   $2 (number) 1- abort"Calling methods by their names is not supported now, use its numeric id" =: MethodId
 } ifnot
-"multisig-code.fif" include =: WalletCode
 $1 +".boc" file>B B>boc =: WalletData
 ."Data: " cr WalletData <s csr. cr
 
-3 { dup $# <= } {
+$#
+dup 1- $() ="-C" {
+  dup $() +".fif" include =: WalletCode
+  2 -
+} {
+  // Import the actual smart contract code
+  "multisig-code-getters.fif" include =: WalletCode
+} cond
+
+3 { 2dup > } {
   dup $() parse-int swap
   1+
-} while drop
+} while 2drop
 
 WalletCode WalletData MethodId runvm()
 

@@ -8,6 +8,8 @@
 
 1 1 check-arg-count()
 
+."Loading state from " $1 +".boc" type cr cr
+
 $1 +".boc" file>B B>boc =: WalletData
 ."Raw data: " cr WalletData <s csr. cr
 
@@ -15,14 +17,14 @@ WalletData parse-data()
 =: Pending =: Owners =: K =: N =: PendingCount =: SeqNo
 
 ."Data:" cr
-."  seqno:        " SeqNo . cr
-."  pending#:     " PendingCount . cr
-."  n:            " N . cr
-."  k:            " K . cr
+."  seqno:    " SeqNo . cr
+."  pending#: " PendingCount . cr
+."  n:        " N . cr
+."  k:        " K . cr
 
 ."  owners:" cr
 Owners 256 {
-  8 u@+ drop ."    #" ._ .":  " x. cr
+  8 u@+ drop ."    #" ._ .":     0x" x. cr
   -1
 } dictforeach
 drop
@@ -33,10 +35,10 @@ Pending 256 {
   32 u@+ swap ."    │  req_valid_until: " . cr
   8 u@+ swap  ."    │  req_mode:        " . cr
   8 u@+ swap  ."    │  req_signatures#: " . cr
-  N u@+ swap  ."    │  req_sigmask:     " dup b.
+  N u@+ swap  ."    │  req_signed_by:   0b" dup b.
   ."= "
   dup {
-    ."no signatures"
+    ."nobody"
   } ifnot
   0 {
     2dup 1<< and {
@@ -55,13 +57,13 @@ Pending 256 {
     9 64 32 + + 1+ u@+ nip
     1 i@+ swap {
       ref@+ <s
-        dup sbits 8 / B@+ swap  ."    │ └  body:          " Bx. cr
+        dup sbits 8 / B@+ swap  ."    │ └  body:          0x" Bx. cr
       s>
     } {
-      dup sbits 8 / B@+ swap    ."    │ └  body:          " Bx. cr
+      dup sbits 8 / B@+ swap    ."    │ └  body:          0x" Bx. cr
     } cond
   s> drop
-  ."    └→ (req_hash:       " x._ .")" cr
+  ."    └→ (req_hash:       0x" x._ .")" cr
   -1
 } dictforeach
 drop

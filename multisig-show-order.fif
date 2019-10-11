@@ -33,7 +33,7 @@ HashOnly null? {
 
                            ."request:" cr
   swap HashOnly {
-                                    ."  →  req_hash: " . cr
+                                    ."  →  req_hash: 0x" . cr
   } {
     <s 
       32 u@+ swap                   ."  ┌  req_seqno:       " . cr
@@ -50,12 +50,12 @@ HashOnly null? {
         9 64 32 + + 1+ u@+ nip
         1 i@+ swap {
           ref@+ <s
-            dup sbits 8 / B@+ swap  ."  │    body:          " Bx. cr
+            dup sbits 8 / B@+ swap  ."  │    body:          0x" Bx. cr
           s>
         } {
-          dup sbits 8 / B@+ swap    ."  │    body:          " Bx. cr
+          dup sbits 8 / B@+ swap    ."  │    body:          0x" Bx. cr
         } cond
-      s>                            ."  └→ (req_hash:       " @' ReqHash x._ .")" cr
+      s>                            ."  └→ (req_hash:       0x" @' ReqHash x._ .")" cr
     s>
   } cond
 

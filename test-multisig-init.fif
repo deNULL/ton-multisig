@@ -1,7 +1,7 @@
 #!/usr/bin/env fift -s
 "multisig-utils.fif" include
 
-{ ."<n> [<k> <filename-base>]" cr
+{ ."<n> [<k> <filename-base>] [-C <code-fif>]" cr
   ."Simulate creation of a multisig wallet locally."
 } : usage()
 
@@ -11,7 +11,14 @@ $1 (number) 1- abort"n must be an integer number" =: n
 def? $2 { @' $2 (number) 1- abort"k must be an integer number" } { n } cond =: k
 def? $3 { @' $3 } { "new-ms-wallet" } cond =: FileBase
 
-"multisig-code.fif" include =: WalletCode
+$#
+dup 1- $() ="-C" {
+  dup $() +".fif" include =: WalletCode
+  2 -
+} {
+  // Import the actual smart contract code
+  "multisig-code-getters.fif" include =: WalletCode
+} cond
 
 n k initial-data() =: WalletData
 

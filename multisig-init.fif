@@ -1,9 +1,10 @@
 #!/usr/bin/env fift -s
 "multisig-utils.fif" include
 
-{ ."<workchain-id> <n> [<k> <filename-base>]" cr
+{ ."<workchain-id> <n> [<k> <filename-base>] [-C <code-fif>]" cr
   ."Creates a new multisig wallet with n keypairs and requiring at least k signatures, with private keys saved to or loaded from <filename-base>-<i>.pk" cr
-  ."('new-ms-wallet-<i>.pk' by default)"
+  ."('new-ms-wallet-<i>.pk' by default)." cr
+  ."By default uses the full code of the wallet. If you want to use stripped-down version (without get-methods), pass 'multisig-code' as last argument."
 } : usage()
 
 2 4 check-arg-count()
@@ -15,8 +16,15 @@ def? $4 { @' $4 } { "new-ms-wallet" } cond =: FileBase
 
 ."Creating new wallet in workchain " WorkchainId . cr
 
-// Import the actual smart contract code
-"multisig-code.fif" include =: WalletCode
+$#
+dup 1- $() ="-C" {
+  dup $() +".fif" include =: WalletCode
+  2 -
+} {
+  // Import the actual smart contract code
+  "multisig-code-getters.fif" include =: WalletCode
+} cond
+
 
 // Generating list of owners
 0 dictnew {

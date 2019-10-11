@@ -6,7 +6,7 @@ Instructions below assume that you are using TON's lite-client with FunC and Fif
 
 For details about building lite-client, please refer to https://github.com/ton-blockchain/ton/tree/master/lite-client-docs. For basic info about running Fift scripts and uploading messages to TON, please refer to https://github.com/ton-blockchain/ton/blob/master/doc/LiteClient-HOWTO.
 
-# Basics
+# What's included
 
 This directory contains following files:
 
@@ -22,6 +22,19 @@ This directory contains following files:
 * `test-multisig-method.fif` Fift script that simulates executing a get-method of a smart contract for a given state. It includes `multisig-code-getters.fif`, so it can call get-methods even if wallet was uploaded without them.
 
 If you wish to make modifications to the wallet's code, it's better to test it using `test-...` scripts without actually uploading it to the blockchain. The same can be done in case something goes wrong (see "Troubleshooting" section below).
+
+# (Re)building the wallet code
+
+As was mentioned above, the smart contract code is located in `multisig-code.fc` and its getters are in `multisig-getters.fc`. These files are written in FunC language, so after you make any changes to them, you need to run FunC transpiler before you can upload the updated code.
+
+Run these commands:
+
+``
+func -o"multisig-code-getters.fif" -P smartcont/stdlib.fc multisig-code.fc multisig-code-getters.fc
+func -o"multisig-code.fif" -P smartcont/stdlib.fc multisig-code.fc
+``
+
+This should rebuild files `multisig-code-getters.fif` (full version of the wallet) and `multisig-code.fif` (stripped-down version, without getters). Now you can use `multisig-init.fif` to init your wallet (see "Initialising a new wallet" section below).
 
 # How to use
 
@@ -114,7 +127,7 @@ To solve that, let's add an *inner* seqno to the message. It does not need to be
 
 Now, if we want to collect multiple signatures via email (or other "slow process"), we can just add our own signature and upload the resulting order (we can think of this as a "create" call), which will freeze the inner seqno counter. After that we can start collecting signatures for that order (which can now be identified just by its hash).
 
-This is the approach I've chosen for this implementation. The another minor detail is that by default the last owner to sign an order attaches his signature two times. If we wish, we can remove the inner signature: the smart contract can consider the validity of the outer signature as our approval. After doing that we'll reduce the size of the message by about 768 bits, but other owners won't be able to add their inner signatures to it. (Refer to section "Sealing an order before upload" for details.)
+This is the approach I've chosen for this implementation. The another minor detail is that by default the last owner to sign an order attaches his signature two times, which is excessive. If we wish, we can remove the inner signature: the smart contract can consider the validity of the outer signature as the confirmation of our approval. After doing so we'll reduce the size of the message by about 768 bits, but other owners won't be able to add their inner signatures to it. (Refer to section "Sealing an order before upload" for details.)
 
 # DRAFT BELOW
 

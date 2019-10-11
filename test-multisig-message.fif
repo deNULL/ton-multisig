@@ -2,20 +2,26 @@
 "common-utils.fif" include
 
 {
-  ."<old-data-boc> <message-boc> [<new-data-boc>]" cr
+  ."<old-data-boc> <message-boc> [<new-data-boc>] [-C <code-fif>]" cr
   ."Simulate sending an external message to multisig wallet."
 } : usage()
 
 2 3 check-arg-count()
 
-"multisig-code.fif" include =: WalletCode
 $1 +".boc" file>B B>boc =: OldWalletData
 ."Old data: " cr OldWalletData <s csr. cr
 $2 +".boc" file>B B>boc 
 <s ref@ =: WalletMessage
 ."Message: " cr WalletMessage <s csr. cr
 
-
+$#
+dup 1- $() ="-C" {
+  dup $() +".fif" include =: WalletCode
+  2 -
+} {
+  // Import the actual smart contract code
+  "multisig-code-getters.fif" include =: WalletCode
+} cond
 
 WalletMessage <s WalletCode OldWalletData recv_external runvm()
 
