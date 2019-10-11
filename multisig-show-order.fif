@@ -50,12 +50,12 @@ HashOnly null? {
         9 64 32 + + 1+ u@+ nip
         1 i@+ swap {
           ref@+ <s
-            dup sbits 8 / B@+ swap  ."  │    inner message: 0x" Bx. cr
+            dup sbits 8 / B@+ swap  ."  │    body:          " Bx. cr
           s>
         } {
-          dup sbits 8 / B@+ swap    ."  │    inner message: " Bx. cr
+          dup sbits 8 / B@+ swap    ."  │    body:          " Bx. cr
         } cond
-      s>                            ."  └→ (req_hash:       " @' ReqHash x. .")" cr
+      s>                            ."  └→ (req_hash:       " @' ReqHash x._ .")" cr
     s>
   } cond
 

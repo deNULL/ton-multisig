@@ -1,0 +1,67 @@
+#!/usr/bin/env fift -s
+"multisig-utils.fif" include
+
+{
+  ."<data-boc>" cr
+  ."Displays data stored within the persisting storage of a multisig wallet."
+} : usage()
+
+1 1 check-arg-count()
+
+$1 +".boc" file>B B>boc =: WalletData
+."Raw data: " cr WalletData <s csr. cr
+
+WalletData parse-data()
+=: Pending =: Owners =: K =: N =: PendingCount =: SeqNo
+
+."Data:" cr
+."  seqno:        " SeqNo . cr
+."  pending#:     " PendingCount . cr
+."  n:            " N . cr
+."  k:            " K . cr
+
+."  owners:" cr
+Owners 256 {
+  8 u@+ drop ."    #" ._ .":  " x. cr
+  -1
+} dictforeach
+drop
+
+."  pending:" cr
+Pending 256 {
+  32 u@+ swap ."    ┌  req_seqno:       " . cr
+  32 u@+ swap ."    │  req_valid_until: " . cr
+  8 u@+ swap  ."    │  req_mode:        " . cr
+  8 u@+ swap  ."    │  req_signatures#: " . cr
+  N u@+ swap  ."    │  req_sigmask:     " dup b.
+  ."= "
+  dup {
+    ."no signatures"
+  } ifnot
+  0 {
+    2dup 1<< and {
+      ."#" dup .
+    } if
+    1+
+  } N times 2drop
+  cr
+  ."    │  req_message:" cr
+  ref@+ <s
+    2 u@+ nip
+    1 i@+ swap                  ."    │ ┌  bounce?        " dup =: BounceFlag { ."true" } { ."false" } cond cr
+    6 u@+ nip
+    8 i@+ 256 u@+ -rot          ."    │ │  dest_addr:     " 2dup @' BounceFlag 7 + .Addr ." = " .addr cr
+    Gram@+ swap                 ."    │ │  amount:        " .GR cr
+    9 64 32 + + 1+ u@+ nip
+    1 i@+ swap {
+      ref@+ <s
+        dup sbits 8 / B@+ swap  ."    │ └  body:          " Bx. cr
+      s>
+    } {
+      dup sbits 8 / B@+ swap    ."    │ └  body:          " Bx. cr
+    } cond
+  s> drop
+  ."    └→ (req_hash:       " x._ .")" cr
+  -1
+} dictforeach
+drop
