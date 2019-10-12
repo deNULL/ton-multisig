@@ -1,4 +1,4 @@
-// automatically generated from `/Users/denull/dev/ton/src/crypto/smartcont/stdlib.fc` `multisig-code.fc` `multisig-getters.fc` 
+// automatically generated from `../src/crypto/smartcont/stdlib.fc` `code.fc` `getters.fc` 
 PROGRAM{
   DECLPROC recv_internal
   DECLPROC recv_external
@@ -219,6 +219,8 @@ PROGRAM{
         8 PUSHPOW2
         DICTUDEL
         DROP
+        s0 s5 XCHG
+        DEC
       }>ELSE<{
         NEWC
         s1 s4 XCHG
@@ -234,7 +236,9 @@ PROGRAM{
         s0 s1 s6 XCHG3
         8 PUSHPOW2
         DICTUSETB
+        s0 s5 XCHG
       }>
+      s0 s5 XCHG
       s0 s4 XCHG
       s0 s3 XCHG
     }>
