@@ -52,46 +52,37 @@ PROGRAM{
         DICTUGETNEXT
         NULLSWAPIFNOT
         NULLSWAPIFNOT
-        DUP
+        s0 s2 XCHG
+        32 PUSHINT
+        SDSKIPFIRST
+        32 PLDU
+        NOW
+        LESS
+        s2 s(-1) PUXC
+        AND
         IF:<{
-          s0 s2 XCHG
-          32 LDU
-          NIP
-          32 LDU
-          DROP
-          NOW
-          LESS
-          IF:<{
-            s0 s2 PUXC
-            CONS
-          }>ELSE<{
-            s0 s2 XCHG
-          }>
+          s0 s2 PUXC
+          CONS
         }>ELSE<{
-          2SWAP
-          DROP
+          s0 s2 XCHG
         }>
         SWAP
         NOT
       }>
       NIP
-      DUP
-      ISNULL
-      IFNOT:<{
-        UNTIL:<{
-          UNCONS
-          s0 s6 XCHG
-          8 PUSHPOW2
-          DICTUDEL
-          DROP
-          s5 PUSH
-          ISNULL
-          s1 s6 XCHG
-        }>
+      WHILE:<{
+        DUP
+        ISNULL
+        NOT
+      }>DO<{
+        UNCONS
+        s0 s6 XCHG
+        8 PUSHPOW2
+        DICTUDEL
         DROP
-      }>ELSE<{
-        DROP
+        s0 s5 XCHG
       }>
+      DROP
     }>
     WHILE:<{
       s3 PUSH
