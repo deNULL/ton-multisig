@@ -7,7 +7,7 @@
   ."By default uses the full code of the wallet. If you want to use stripped-down version (without get-methods), pass 'multisig-code' as last argument."
 } : usage()
 
-2 4 check-arg-count()
+2 6 check-arg-count()
 
 $1 parse-workchain-id =: WorkchainId
 $2 (number) 1- abort"n must be an integer number" =: n
