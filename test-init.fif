@@ -12,7 +12,7 @@
 $1 +"-init-query.boc" file>B B>boc parse-external-message()
 =: WalletMessage =: StateInit 2drop
 
-StateInit untriple =: WalletLibs =: WalletCode =: WalletData
+StateInit untriple =: WalletLibs =: WalletData =: WalletCodeCell
 
 def? $2 { @' $2 } { $1 +"-data-0" } cond =: FileBase
 
@@ -21,9 +21,10 @@ dup 1- $() ="-C" {
   dup $() +".fif" include =: WalletCode
   2 -
 } {
-  // Import the actual smart contract code
-  "code-getters.fif" include =: WalletCode
+  WalletCodeCell =: WalletCode
 } cond
+
+WalletData <s csr. cr
 
 WalletMessage <s recv_external WalletCode WalletData runvm()
 

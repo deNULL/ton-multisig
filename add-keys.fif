@@ -14,7 +14,7 @@ $1 +"-init-query.boc" file>B B>boc parse-external-message()
 drop =: OldStateInit drop =: WorkchainId
 
 // Update StateInit
-OldStateInit untriple =: WalletLibs =: WalletCode =: OldWalletData
+OldStateInit untriple =: WalletLibs =: OldWalletData =: WalletCode
 
 OldWalletData parse-data() drop =: OldOwners =: OldK =: OldN drop drop
 
