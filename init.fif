@@ -52,7 +52,7 @@ dup 1- $() ="-C" {
 WalletCode WalletData null state-init() =: StateInit
 ."StateInit: " StateInit <s csr. cr
 
-WorkchainId StateInit hash 2constant WalletAddr
+WorkchainId StateInit hashu 2constant WalletAddr
 ."New wallet address = " WalletAddr .addr cr
 WalletAddr FileBase +".addr" save-address-verbose
 

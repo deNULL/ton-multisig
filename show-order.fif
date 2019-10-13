@@ -35,7 +35,7 @@ HashOnly null? {
   swap HashOnly {
                                     ."  →  req_hash: 0x" x. cr
   } {
-    dup hash =: ReqHash
+    dup hashu =: ReqHash
     <s 
       32 u@+ swap                   ."  ┌  req_seqno:       " . cr
       32 u@+ swap                   ."  │  req_valid_until: " . cr

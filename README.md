@@ -145,7 +145,7 @@ List of available methods:
 * `owners`
    Returns List consisting of Tuples, in which the first component is a public key (as a number) of an owner, and the second is its internal index.
 * `pending`
-   Returns List consisting of Tuples with following values: `(req_hash, req_seqno, req_expiry, req_mode, req_sigcount, req_signatures, req_message)`.`req_signatures` is a bit mask, where bit I is set if this order collected the signature from the owner with that internal index.
+   Returns List consisting of Tuples with following values: `(req_hash, req_seqno, req_expiry, req_mode, req_sigcount, req_signatures, req_message)`.`req_signatures` is a bit mask, where *i*th bit is set if this order collected the signature from the owner with that internal index.
 * `pending_signed_by(pubkey, signed?)`
    Return List of pending orders, filtered by a pubkey (public key of an owner, passed as a number). If second param is `true`, returns only orders signed by that owner. Otherwise returns only orders NOT signed by him.
 

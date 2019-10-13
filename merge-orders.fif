@@ -67,8 +67,8 @@ ValidUntil1 ValidUntil2 max =: ValidUntil
 
 HashOnly1 HashOnly2 or =: HashOnly
 
-HashOnly1 { Request1 } { Request1 hash } cond =: RequestHash1
-HashOnly2 { Request2 } { Request2 hash } cond =: RequestHash2
+HashOnly1 { Request1 } { Request1 hashu } cond =: RequestHash1
+HashOnly2 { Request2 } { Request2 hashu } cond =: RequestHash2
 
 RequestHash1 RequestHash2 <> abort"Request hashes are different"
 

@@ -76,7 +76,7 @@
     } {
       rot tuck ref,       // request
       // keypairs request builderO
-      swap hash swap
+      swap hashu swap
     } cond
     2 exch
     // builderO hash keypairs
@@ -113,7 +113,7 @@
 //
 // Attaches signature to a slice representing message body.
 {
-  over hash swap ed25519_sign_uint
+  over hashu swap ed25519_sign_uint
   <b 
     swap B, swap <s s,
   b>
