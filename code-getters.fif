@@ -71,15 +71,20 @@ PROGRAM{
             s1 s7 s7 PUXC2
             DICTUDEL
             DROP
+            s0 s7 XCHG
+            DEC
           }>ELSE<{
+            s6 s7 XCHG
             s0 s6 XCHG
           }>
         }>ELSE<{
+          s7 s8 XCHG
           s7 s2 XCHG2
           DROP
         }>
         SWAP
         NOT
+        s1 s7 XCHG
         s1 s6 XCHG
       }>
       DROP

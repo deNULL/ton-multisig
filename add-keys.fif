@@ -37,7 +37,7 @@ OldStateInit untriple =: WalletLibs =: OldWalletData =: WalletCode
 OldWalletData parse-data() drop =: OldOwners =: OldK =: OldN drop drop
 
 // Default values
-BaseFile +"-init-query" =:? SaveFile
+BaseFile =:? SaveFile
 OldK =:? NewK
 
 // Generating list of owners
@@ -93,5 +93,5 @@ external-message() =: ExtMessage
 
 ."External message for initialization is " ExtMessage <s csr. cr
 ExtMessage 2 boc+>B dup Bx. cr
-SaveFile +".boc" tuck B>file
+SaveFile +"-init-query.boc" tuck B>file
 ."(Saved wallet creating query to file " type .")" cr
