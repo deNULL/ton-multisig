@@ -51,21 +51,26 @@ PROGRAM{
         DICTUGETNEXT
         NULLSWAPIFNOT
         NULLSWAPIFNOT
-        s0 s2 XCHG
-        32 PUSHINT
-        SDSKIPFIRST
-        32 PLDU
-        NOW
-        LESS
-        s2 s(-1) PUXC
-        AND
+        DUP
         IF:<{
-          8 PUSHPOW2
-          s1 s7 s7 PUXC2
-          DICTUDEL
+          s0 s2 XCHG
+          32 LDU
+          NIP
+          32 LDU
           DROP
+          NOW
+          LESS
+          IF:<{
+            8 PUSHPOW2
+            s1 s7 s7 PUXC2
+            DICTUDEL
+            DROP
+          }>ELSE<{
+            s0 s6 XCHG
+          }>
         }>ELSE<{
-          s0 s6 XCHG
+          s7 s2 XCHG2
+          DROP
         }>
         SWAP
         NOT

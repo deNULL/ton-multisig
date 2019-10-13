@@ -77,7 +77,7 @@ Using this script you can add more owners **before initialisation of your smart 
 Option -k allows you to change the K param (number of keys required to complete an order).
 
 ## Creating an order for a new money transfer
-`./new-order.fif <wallet> <dest-addr> <seqno> <amount> <keyname-1> <keyname-2>... [-B <body-boc>] [-O <output-boc>] [-E <seconds>]`
+`./new-order.fif <wallet> <dest-addr> <seqno> <amount> <keyname-1> <keyname-2>... [-B <body-boc>] [-O <output-boc>] [-E <seconds>] [-b] [-M <send-mode>]`
 
 This script will generate a brand new order for money transfer from your multi-sig wallet. You can specify any number of private keys to sign it with.
 
@@ -86,6 +86,8 @@ After that, upload it using `sendfile <wallet>-query.boc` (instead of '`<wallet>
 Option -B allows you to load custom message body for your future transfer.
 
 If you use option -E, your order will be valid only **for the next number of seconds you specified**. After that, it won't be completed even if missing signatures will arrive.
+
+Using option -b you can disable bounce flag and option -M allows to set send mode for future message.
 
 ## Adding signatures to a newly created order
 `./sign-order.fif <query-boc> <keyname-1> <keyname-2>... [-O <output-boc>] [-S <seqno>]`

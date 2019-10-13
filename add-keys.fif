@@ -45,7 +45,7 @@ OldK =:? NewK
 // Generating list of owners
 OldOwners OldN Keynames @ { dup null? not } {
   // owners_dict key_index keynames_list
-  uncons swap ~ +".pk" load-generate-keypair
+  uncons swap +".pk" load-generate-keypair
   // owners_dict key_index arg_index pubkey privkey
   def? PrimaryPrivateKey {
     drop

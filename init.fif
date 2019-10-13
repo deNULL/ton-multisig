@@ -13,8 +13,8 @@
   "-C" "--code-file" 1 { +".fif" include =: WalletCode } option-long()
 
   1 { parse-workchain-id =: WorkchainId } nth-argument()
-  2 { parse-int 1- abort"n must be an integer number" =: n } nth-argument()
-  3 { parse-int 1- abort"k must be an integer number" =: k } nth-argument()
+  2 { (number) 1- abort"n must be an integer number" =: n } nth-argument()
+  3 { (number) 1- abort"k must be an integer number" =: k } nth-argument()
   4 { =: FileBase } nth-argument()
   no-more-arguments() // Prevents adding too much arguments
 } scan-args()

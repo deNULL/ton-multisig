@@ -47,8 +47,14 @@ tuple request_tuple(int hash, int seqno, int expiry, int mode, int sigcount, int
     int f = 0;
     do {
       (req_hash, var request, f) = pending.udict_get_next?(256, req_hash);
-      if (f & (request.skip_bits(32).preload_uint(32) < now())) {
-        pending~udict_delete?(256, req_hash);
+      if (f) {
+        var (_, req_expiry) = (
+          request~load_uint(32),
+          request~load_uint(32)
+        );
+        if (req_expiry < now()) {
+          pending~udict_delete?(256, req_hash);
+        }
       }
     } until (~ f);
   }

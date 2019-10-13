@@ -9,7 +9,7 @@
 // == Parsing command-line arguments
 
 {
-  "-O" "--output-file" 1 { +".fif" include =: SaveFile } option-long()
+  "-O" "--output-file" 1 { =: SaveFile } option-long()
   "-S" "--seqno" 1 { parse-int =: SeqNo } option-long()
 
   1 { =: BaseFile1 } nth-argument()

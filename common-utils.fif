@@ -11,6 +11,45 @@
 // Some comments are marking the state of stack at that point:
 // .s -> <bottom-most element> ... <top-most element>
 
+{
+  dup pair? {
+    unpair
+    dup null? {
+      drop
+    } {
+      @' print-list()
+    } cond
+  } if
+  ."    " .dump cr
+} : print-list()
+
+// ~
+// ( -- )
+// 
+// Similar to .s (prints current stack), but prints each value on a separate line,
+// tries to unwrap Lists and surrounds the output with '<STACK>' and
+// '</STACK>', so it's more noticable.
+
+{
+  cr ."<STACK>" cr
+  depth
+  { dup 0> } {
+    dup pick
+    dup tuple? {
+      ."  LIST:[" cr
+      print-list() 
+      ."  ]"
+    } {
+      ."  "
+      .dump
+    } cond
+    cr
+    1-
+  } while
+  drop
+  ."</STACK>" cr cr
+} : ~
+
 // show-usage()
 // ( -- )
 //
@@ -172,45 +211,6 @@
 
   runvm
 } : runvm()
-
-{
-  dup pair? {
-    unpair
-    dup null? {
-      drop
-    } {
-      @' print-list()
-    } cond
-  } if
-  ."    " .dump cr
-} : print-list()
-
-// ~
-// ( -- )
-// 
-// Similar to .s (prints current stack), but prints each value on a separate line,
-// tries to unwrap Lists and surrounds the output with '<STACK>' and
-// '</STACK>', so it's more noticable.
-
-{
-  cr ."<STACK>" cr
-  depth
-  { dup 0> } {
-    dup pick
-    dup tuple? {
-      ."  LIST:[" cr
-      print-list() 
-      ."  ]"
-    } {
-      ."  "
-      .dump
-    } cond
-    cr
-    1-
-  } while
-  drop
-  ."</STACK>" cr cr
-} : ~
 
 // ="<string>"
 //
