@@ -51,9 +51,8 @@ PROGRAM{
     ISNULL
     IFNOT:<{
       -1 PUSHINT
-      PUSHNULL
       UNTIL:<{
-        s1 s6 XCPU
+        s5 PUSH
         8 PUSHPOW2
         DICTUGETNEXT
         NULLSWAPIFNOT
@@ -67,26 +66,16 @@ PROGRAM{
         s2 s(-1) PUXC
         AND
         IF:<{
-          s0 s2 PUXC
-          CONS
+          8 PUSHPOW2
+          s1 s7 s7 PUXC2
+          DICTUDEL
+          DROP
         }>ELSE<{
-          s0 s2 XCHG
+          s0 s6 XCHG
         }>
         SWAP
         NOT
-      }>
-      NIP
-      WHILE:<{
-        DUP
-        ISNULL
-        NOT
-      }>DO<{
-        UNCONS
-        s0 s6 XCHG
-        8 PUSHPOW2
-        DICTUDEL
-        DROP
-        s0 s5 XCHG
+        s1 s6 XCHG
       }>
       DROP
     }>

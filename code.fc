@@ -30,8 +30,8 @@ tuple request_tuple(int hash, int seqno, int expiry, int mode, int sigcount, int
   throw_unless(33, msg_seqno == stored_seqno);
   throw_unless(34, check_signature(slice_hash(in_msg), signature, signatory_pubkey));
 
-  ;; dict of {stored pubkey => #key},
-  ;; dict of {#request => request},
+  ;; dict of {stored pubkey => key_idx},
+  ;; dict of {req_hash => request},
   var (owners, pending) = (ds~load_dict(), ds~load_dict());
   ds.end_parse();
 
@@ -43,19 +43,14 @@ tuple request_tuple(int hash, int seqno, int expiry, int mode, int sigcount, int
 
   ;; iterate over pending requests and delete all expired ones
   ifnot (pending.null?()) {
-    var req_hash = -1;
-    var l = nil;
-    var f = 0;
+    int req_hash = -1;
+    int f = 0;
     do {
       (req_hash, var request, f) = pending.udict_get_next?(256, req_hash);
       if (f & (request.skip_bits(32).preload_uint(32) < now())) {
-        l = cons(req_hash, l);
+        pending~udict_delete?(256, req_hash);
       }
     } until (~ f);
-
-    while (~ l.null?()) {
-      pending~udict_delete?(256, l~list_next());
-    }
   }
 
   ;; process new request
