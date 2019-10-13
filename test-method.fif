@@ -8,12 +8,12 @@
 
 // == Parsing command-line arguments
 
-variable Args
+variable Args 
 {
   "-C" "--code-file" 1 { +".fif" include =: WalletCode } option-long()
 
   1 { =: OldDataFile } nth-argument()
-  2 { =: MessageFile } nth-argument()
+  2 { =: MethodName } nth-argument()
   {
     Args @ cons Args !
     drop
@@ -39,7 +39,7 @@ def? MethodId {
 OldDataFile +".boc" file>B B>boc =: WalletData
 ."Data: " cr WalletData <s csr. cr
 
-Args @ { dup null? not } {
+Args @ reverse-list() { dup null? not } {
   uncons swap parse-int swap
 } while drop
 

@@ -31,7 +31,7 @@ BaseFile +".addr" load-address
 ."Source wallet address = " 2dup .addr cr 6 .Addr cr
 
 // Load keypairs specified in command line
-null Keynames @ { dup null? not } { // keypairs keynames
+null Keynames @ reverse-list() { dup null? not } { // keypairs keynames
   uncons swap +".pk" load-keypair
   // keypairs i pubkey privkey
   def? PrimaryPublicKey {

@@ -182,8 +182,24 @@
     drop drop
     swap 1+ swap
   } while
-  nip
+  nip nip
 } : scan-args()
+
+// reverse-list()
+// (l - l')
+//
+// Returns List in reversed order.
+
+{
+  null { over null? not } {
+    // l l'
+    swap uncons
+    // l' h t
+    2 exch cons
+    // t l'
+  } while
+  nip
+} : reverse-list()
 
 // =:? <word>
 // (value -- )
@@ -335,7 +351,7 @@
     swap 0b10   <> abort"Expected addr_std$10 in dest field"
     1 u@+
     swap 0b0    <> abort"Expected no anycast in dest field"
-    8 u@+       // workchain_id
+    8 i@+       // workchain_id
     256 u@+     // address
     Gram@+
     swap 0      <> abort"Expected import_fee=0"

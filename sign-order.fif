@@ -57,7 +57,7 @@ drop
 
 
 // Append keypairs specified in command line
-Keynames @ { dup null? not } { // keypairs keynames
+Keynames @ reverse-list() { dup null? not } { // keypairs keynames
   uncons swap +".pk" load-keypair
   // keypairs i pubkey privkey
   def? PrimaryPublicKey {

@@ -20,8 +20,6 @@ variable Keynames
   } other-argument()
 } scan-args()
 
-Keynames @ ~ drop cr
-
 2 < { // Checks that there's enough arguments
   show-usage()
 } if
@@ -43,9 +41,10 @@ BaseFile +"-init-query" =:? SaveFile
 OldK =:? NewK
 
 // Generating list of owners
-OldOwners OldN Keynames @ { dup null? not } {
+OldOwners OldN Keynames @ reverse-list() { dup null? not } {
   // owners_dict key_index keynames_list
   uncons swap +".pk" load-generate-keypair
+  // 2dup .", keys: 0x" Bx. ." (priv), 0x" Bx. ." (pub)" cr
   // owners_dict key_index arg_index pubkey privkey
   def? PrimaryPrivateKey {
     drop
@@ -73,9 +72,12 @@ drop // arg_index not needed
 WalletCode NewWalletData WalletLibs state-init() =: StateInit
 ."StateInit: " StateInit <s csr. cr
 
-WorkchainId StateInit hash 2constant WalletAddr
+WorkchainId StateInit hashu 2constant WalletAddr
 ."Updated wallet address = " WalletAddr .addr cr
 WalletAddr SaveFile +".addr" save-address-verbose
+
+."Non-bounceable address (for init): " WalletAddr 7 .Addr cr
+."Bounceable address (for later access): " WalletAddr 6 .Addr cr
 
 0 -1 PrimaryPublicKey empty-message() =: WalletMessageBody
 ."Signing message: " WalletMessageBody <s csr. cr
