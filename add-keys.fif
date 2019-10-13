@@ -58,10 +58,15 @@ OldOwners OldN Keynames @ reverse-list() { dup null? not } {
     // owners_dict key_index arg_index pubkey builder
     4 roll
     // udict requires order: value(builder) key(pubkey) dict(owners) n=256
-  256 b>udict!
-  0= abort"Unable to store public key in the contract data"
-  // key_index arg_index owners_dict
-  rot 1+ rot
+  2dup 256 udict@ ~ // check if already added
+  {
+    drop nip nip -rot // duplicate, noop
+  } {
+    256 b>udict!
+    0= abort"Unable to store public key in the contract data"
+    // key_index arg_index owners_dict
+    rot 1+ rot
+  } cond
 } while
 drop // arg_index not needed
 =: NewN =: NewOwners
