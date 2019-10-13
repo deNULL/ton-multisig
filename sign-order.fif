@@ -1,16 +1,31 @@
 #!/usr/bin/env fift -s
 "multisig-utils.fif" include
 
-{ ."<query-boc> <keyname-1> <keyname-2>... [-O <output-boc>] [-s <seqno>]" cr
+{ ."<query-boc> <keyname-1> <keyname-2>... [-O <output-boc>] [-S <seqno>]" cr
   ."Appends new signatures to a (not yet sent) query to a multisig wallet." cr
   ."It's recommended to check that query is correct first via multisig-show-order.fif" cr
   ."If output file is omitted, adds signatures to the original file." cr
   ."Note that <keyname-N> is not the index of a private key, but its filename (without .pk extension)."
 } : usage()
 
-2 1000 check-arg-count()
+// == Parsing command-line arguments
 
-$1 =: QueryName
+variable Keynames
+{
+  "-O" "--output-file" 1 { =: SaveFile } option-long()
+  "-S" "--seqno" 1 { parse-int =: SeqNo } option-long()
+
+  1 { =: QueryName } nth-argument()
+  {
+    Keynames @ cons Keynames !
+    drop
+  } other-argument()
+} scan-args()
+2 < { show-usage() } if // Checks that there's enough arguments
+
+// == End of parsing command-line arguments
+
+QueryName =:? SaveFile
 
 ."Loading message from " QueryName +".boc" type cr cr
 
@@ -30,12 +45,6 @@ drop // last_pubkey will be replaced
 =: ValidUntil =: SeqNo
 drop // signature will be replaced
 
-$#
-dup 1- $() ="-O" {
-  dup $() =: SaveFile
-  2 -
-} if
-
 null
 Signatures 256 { 
   // signs signature privkey
@@ -48,11 +57,8 @@ drop
 
 
 // Append keypairs specified in command line
-swap
-{
-  dup 2 >=
-} { // keypairs i
-  dup $() +".pk" load-keypair
+Keynames @ { dup null? not } { // keypairs keynames
+  uncons swap +".pk" load-keypair
   // keypairs i pubkey privkey
   def? PrimaryPublicKey {
     2dup
@@ -61,16 +67,11 @@ swap
   } ifnot
   swap
   3 roll
-  cons
-  cons
-  swap 1-
+  cons cons
+  swap
 } while
 drop
 =: Keypairs
-
-def? SaveFile {
-  $1 =: SaveFile
-} ifnot
 
 ."Signing order request: " Request <s csr. cr
 

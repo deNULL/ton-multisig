@@ -6,28 +6,33 @@
   ."Note that <keyname-N> is not the index of a private key, but its filename (without .pk extension)."
 } : usage()
 
-3 1000 check-arg-count()
+// == Parsing command-line arguments
 
-$1 =: BaseFile
-$2 parse-int =: SeqNo
-$3 parse-int =: RequestHash
+variable Keynames
+{
+  "-O" "--output-file" 1 { =: SaveFile } option-long()
+
+  1 { =: BaseFile } nth-argument()
+  2 { parse-int =: SeqNo } nth-argument()
+  3 { parse-int =: RequestHash } nth-argument()
+  {
+    Keynames @ cons Keynames !
+    drop
+  } other-argument()
+} scan-args()
+3 < { show-usage() } if // Checks that there's enough arguments
+
+// == End of parsing command-line arguments
+
+BaseFile +"-query" =:? SaveFile
 
 BaseFile +".addr" load-address
 2dup 2constant WalletAddr
 ."Source wallet address = " 2dup .addr cr 6 .Addr cr
 
-$#
-dup 1- $() ="-O" {
-  dup $() =: SaveFile
-  2 -
-} if
-
 // Load keypairs specified in command line
-null swap
-{
-  dup 4 >=
-} { // keypairs i
-  dup $() +".pk" load-keypair
+null Keynames @ { dup null? not } { // keypairs keynames
+  uncons swap +".pk" load-keypair
   // keypairs i pubkey privkey
   def? PrimaryPublicKey {
     2dup
@@ -37,16 +42,12 @@ null swap
   swap
   3 roll
   cons cons
-  swap 1-
+  swap
 } while
 drop
 =: Keypairs
 
 PrimaryPrivateKey drop
-
-def? SaveFile {
-  BaseFile +"-query" =: SaveFile
-} ifnot
 
 ."Signing an existing order with hash = " RequestHash x. cr
 

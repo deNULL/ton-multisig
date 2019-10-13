@@ -5,28 +5,24 @@
   ."Creates an empty request to a multisig wallet. It is to be used to purge expired pending request from wallet's storage."
 } : usage()
 
-3 5 check-arg-count()
+// == Parsing command-line arguments
 
-$1 =: BaseFile
-$2 parse-int =: SeqNo
+{
+  "-O" "--output-file" 1 { =: SaveFile } option-long()
 
-BaseFile +".addr" load-address
-2dup 2constant WalletAddr
+  1 { =: BaseFile } nth-argument()
+  2 { parse-int =: SeqNo } nth-argument()
+  3 { +".pk" load-keypair =: PrimaryPrivateKey =: PrimaryPublicKey } nth-argument()
+  no-more-arguments()
+} scan-args()
+3 < { show-usage() } if // Checks that there's enough arguments
+
+// == End of parsing command-line arguments
+
+BaseFile +"-query" =:? SaveFile
+
+BaseFile +".addr" load-address 2dup 2constant WalletAddr
 ."Source wallet address = " 2dup .addr cr 6 .Addr cr
-
-$#
-dup 1- $() ="-O" {
-  dup $() =: SaveFile
-  2 -
-} if
-
-$3 +".pk" load-keypair
-=: PrimaryPrivateKey
-=: PrimaryPublicKey
-
-def? SaveFile {
-  BaseFile +"-query" =: SaveFile
-} ifnot
 
 WalletAddr null
   SeqNo -1 PrimaryPublicKey empty-message() PrimaryPrivateKey sign-message()

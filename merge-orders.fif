@@ -1,16 +1,32 @@
 #!/usr/bin/env fift -s
 "multisig-utils.fif" include
 
-{ ."<query1-boc> <query2-boc> <keyname> [-O <output-boc>] [-s <seqno>]" cr
+{ ."<query1-boc> <query2-boc> <keyname> [-O <output-boc>] [-S <seqno>]" cr
   ."Merges signatures of two queries to a multisig wallet with the same bodies." cr
   ."Note that you need a valid key (in <keyname>.pk file) to perform this operation."
 } : usage()
 
-3 5 check-arg-count()
+// == Parsing command-line arguments
 
-."Loading message from " $1 +".boc" type cr cr
+{
+  "-O" "--output-file" 1 { +".fif" include =: SaveFile } option-long()
+  "-S" "--seqno" 1 { parse-int =: SeqNo } option-long()
 
-$1 +".boc" file>B B>boc parse-external-message()
+  1 { =: BaseFile1 } nth-argument()
+  2 { =: BaseFile2 } nth-argument()
+  3 { =: Keyfile } nth-argument()
+  no-more-arguments() // Prevents adding too much arguments
+} scan-args()
+
+3 < { // Checks that there's enough arguments
+  show-usage()
+} if
+
+// == End of parsing command-line arguments
+
+."Loading message from " BaseFile1 +".boc" type cr cr
+
+BaseFile1 +".boc" file>B B>boc parse-external-message()
 =: MessageBody1 =: StateInit1 2=: WalletAddr1
 
 ."dst_addr:     " WalletAddr1 .addr cr cr
@@ -26,9 +42,9 @@ drop // last_pubkey will be replaced
 =: ValidUntil1 =: SeqNo1
 drop // signature will be replaced
 
-."Loading message from " $2 +".boc" type cr cr
+."Loading message from " BaseFile2 +".boc" type cr cr
 
-$2 +".boc" file>B B>boc parse-external-message()
+BaseFile2 +".boc" file>B B>boc parse-external-message()
 =: MessageBody2 =: StateInit2 2=: WalletAddr2
 
 WalletAddr1 WalletAddr2
@@ -45,23 +61,8 @@ drop // last_pubkey will be replaced
 =: ValidUntil2 =: SeqNo2
 drop // signature will be replaced
 
-$#
-dup 1- $() ="-s" {
-  dup $() =: SeqNo
-  2 -
-} if
-dup 1- $() ="-O" {
-  dup $() =: SaveFile
-  2 -
-} if
-
-def? SeqNo {
-  SeqNo1 SeqNo2 max =: SeqNo
-} ifnot
-
-def? SaveFile {
-  $1 =: SaveFile
-} ifnot
+SeqNo1 SeqNo2 max =:? SeqNo
+BaseFile1 =:? SaveFile
 
 ValidUntil1 ValidUntil2 max =: ValidUntil
 
@@ -74,7 +75,7 @@ RequestHash1 RequestHash2 <> abort"Request hashes are different"
 
 HashOnly { RequestHash1 } { Request1 } cond =: Request
 
-$3 +".pk" load-keypair
+Keyfile +".pk" load-keypair
 =: PrimaryPrivateKey
 =: PrimaryPublicKey
 

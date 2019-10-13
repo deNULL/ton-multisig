@@ -6,11 +6,19 @@
   ."Displays data stored within the persisting storage of a multisig wallet."
 } : usage()
 
-1 1 check-arg-count()
+// == Parsing command-line arguments
 
-."Loading state from " $1 +".boc" type cr cr
+{
+  1 { =: BaseFile } nth-argument()
+  no-more-arguments()
+} scan-args()
+1 < { show-usage() } if // Checks that there's enough arguments
 
-$1 +".boc" file>B B>boc =: WalletData
+// == End of parsing command-line arguments
+
+."Loading state from " BaseFile +".boc" type cr cr
+
+BaseFile +".boc" file>B B>boc =: WalletData
 ."Raw data: " cr WalletData <s csr. cr
 
 WalletData parse-data()

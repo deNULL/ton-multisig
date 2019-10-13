@@ -5,11 +5,19 @@
   ."Displays data and list of signatures in a prepared query to a multisig wallet."
 } : usage()
 
-1 1 check-arg-count()
+// == Parsing command-line arguments
 
-."Loading message from " $1 +".boc" type cr cr
+{
+  1 { =: BaseFile } nth-argument()
+  no-more-arguments()
+} scan-args()
+1 < { show-usage() } if // Checks that there's enough arguments
 
-$1 +".boc" file>B B>boc parse-external-message()
+// == End of parsing command-line arguments
+
+."Loading message from " BaseFile +".boc" type cr cr
+
+BaseFile +".boc" file>B B>boc parse-external-message()
 =: MessageBody =: StateInit 2=: Addr
 
 ."dst_addr:     " Addr .addr cr cr

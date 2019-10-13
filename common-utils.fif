@@ -11,6 +11,13 @@
 // Some comments are marking the state of stack at that point:
 // .s -> <bottom-most element> ... <top-most element>
 
+// show-usage()
+// ( -- )
+//
+// Prints contents of globally defined usage() and halts with exit code 1.
+
+{ ."Usage: " @' $0 type ." " @' usage() cr 1 halt } : show-usage()
+
 // check-arg-count()
 // (min max -- )
 //
@@ -20,6 +27,131 @@
 {
   $# < swap $# > or { ."Usage: " @' $0 type ." " @' usage() cr 1 halt } if
 } : check-arg-count()
+
+// option-long()
+// (i counter argument processed short-name long-name param-count handler -- i' counter argument processed')
+//
+// Option is a predefined command-line argument that consumes some number of following arguments
+// and passes them to the handler. Handler is expected to remove all those values from the stack.
+// This word is for options with two forms: short (like "-O <filename>") and long (like "--output <filename>").
+// Shows usage if there's not enough arguments in the command line left.
+
+{
+  rot 5 pick $= 3 roll 5 pick $= or {
+    swap dup 6 roll
+    // counter argument processed handler param-count param-count' i
+    { over 0> } { // Move option's params to the stack
+      1+ dup $# <= {
+        show-usage()
+      } ifnot
+      dup $()
+      4 -roll // -> ...<new param> handler param-count param-count' i
+      swap 1- swap
+    } while
+    nip swap 4 + -roll
+    // i counter argument processed <param>x<param-count> handler
+    execute
+    1+
+  } {
+    drop drop
+  } cond
+} : option-long()
+
+// option()
+// (i counter argument processed name param-count handler -- i' counter argument processed')
+//
+// Option is a predefined command-line argument that consumes some number of following arguments
+// and passes them to the handler. Handler is expected to remove all those values from the stack.
+
+{ 2 pick -rot option-long() } : option()
+
+// switch()
+// (i counter argument processed name handler -- i' counter argument processed')
+//
+// Switch is a 0-parameter command line option (boolean flag).
+
+{ 0 swap option() } : switch()
+
+// switch-long()
+// (i counter argument processed short-name long-name handler -- i' counter argument processed')
+//
+// Switch that has two forms: short (like "-f") and long (like "--enable-feature").
+
+{ 0 swap option-long() } : switch-long()
+
+// nth-argument()
+// (i counter argument processed n handler -- i' counter argument processed')
+//
+// Handles n-th command line argument (1-indexed, not including options/switches and their params).
+// Invokes handler with the argument value. Handler is expected to remove that value from stack.
+
+{
+  2 pick {
+    2drop
+  } {
+    swap 4 pick 1+ = {
+      2 pick swap execute
+      rot 1+ -rot
+      1+
+    } {
+      drop
+    } cond
+  } cond
+} : nth-argument()
+
+// other-argument()
+// (i counter argument processed handler -- i' counter argument processed')
+//
+// Handles rest of arguments by invoking handler if current argument was not yet processed.
+// Handler receives following params: (counter argument) and is expected to remove them from stack.
+
+{
+  over {
+    drop
+  } {
+    3 pick 3 pick rot 
+    execute
+    rot 1+ -rot
+  } cond
+} : other-argument()
+
+// no-more-arguments()
+// (processed -- processed)
+//
+// Check value on top of the stack and if it's false, shows usage and exits the app.
+
+{
+  dup {
+    show-usage()
+  } ifnot
+} : no-more-arguments()
+
+// scan-args()
+// (e -- argcount)
+//
+// Executes block e for each of the command-line arguments.
+// On each run, e receives (i counter argument processed?), where i is the original index of the argument,
+// counter is index amoung non-option arguments (like "-F") and their parameters, starting from 0,
+// argument is the actual string value of the argument, and processed? is always 0.
+// Block e is expected to leave those values on stack (potentially updating them).
+// Returns the final value of the counter.
+
+{
+  1 0 { over $# <= } {
+    over $() 0
+    4 pick execute
+    drop drop
+    swap 1+ swap
+  } while
+  nip
+} : scan-args()
+
+// =:? <word>
+// (value -- )
+//
+// Defines new constant (similarly to =:), but only if it was not defined before (this allows to set a default value to it).
+
+{ bl word dup (def?) { 2drop } { ({) rot 1 'nop (compile) (}) swap 0 (create) } cond 0 'nop } :: =:?
 
 // runvm()
 // ( -- )

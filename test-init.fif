@@ -5,24 +5,28 @@
   ."Simulate creation of a multisig wallet locally."
 } : usage()
 
-1 3 check-arg-count()
+// == Parsing command-line arguments
 
-."Loading init message from " $1 +"-init-query.boc" type cr cr
+{
+  "-C" "--code-file" 1 { +".fif" include =: WalletCode } option-long()
 
-$1 +"-init-query.boc" file>B B>boc parse-external-message()
+  1 { =: BaseFile } nth-argument()
+  2 { =: NewDataFile } nth-argument()
+  no-more-arguments()
+} scan-args()
+1 < { show-usage() } if // Checks that there's enough arguments
+
+// == End of parsing command-line arguments
+
+."Loading init message from " BaseFile +"-init-query.boc" type cr cr
+
+BaseFile +"-init-query.boc" file>B B>boc parse-external-message()
 =: WalletMessage =: StateInit 2drop
 
 StateInit untriple =: WalletLibs =: WalletData =: WalletCodeCell
 
-def? $2 { @' $2 } { $1 +"-data-0" } cond =: FileBase
-
-$#
-dup 1- $() ="-C" {
-  dup $() +".fif" include =: WalletCode
-  2 -
-} {
-  WalletCodeCell =: WalletCode
-} cond
+BaseFile +"-data-0" =:? NewDataFile
+WalletCodeCell =:? WalletCode
 
 WalletData <s csr. cr
 
@@ -34,6 +38,6 @@ WalletMessage <s recv_external WalletCode WalletData runvm()
 ."Exit code: " ExitCode . cr
 ."Updated data: " cr NewWalletData <s csr. cr
 
-."Saving updated data to " FileBase +".boc" type cr
+."Saving updated data to " NewDataFile +".boc" type cr
 
-NewWalletData 2 boc+>B FileBase +".boc" B>file
+NewWalletData 2 boc+>B NewDataFile +".boc" B>file

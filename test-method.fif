@@ -6,35 +6,42 @@
   ."Simulate calling a get method of a multisig wallet."
 } : usage()
 
-2 10000 check-arg-count()
+// == Parsing command-line arguments
+
+variable Args
+{
+  "-C" "--code-file" 1 { +".fif" include =: WalletCode } option-long()
+
+  1 { =: OldDataFile } nth-argument()
+  2 { =: MessageFile } nth-argument()
+  {
+    Args @ cons Args !
+    drop
+  } other-argument()
+} scan-args()
+2 < { show-usage() } if // Checks that there's enough arguments
+
+// == End of parsing command-line arguments
+
+"code-getters.fif" include =:? WalletCode
 
 // Having a word to compute method id by its name would be nice...
-$2 ="seqno" { 85143 =: MethodId } if
-$2 ="pending_count" { 126687 =: MethodId } if
-$2 ="param_n" { 107113 =: MethodId } if
-$2 ="param_k" { 127692 =: MethodId } if
-$2 ="owners" { 84885 =: MethodId } if
-$2 ="pending" { 126129 =: MethodId } if
-$2 ="pending_signed_by" { 75417 =: MethodId } if
+MethodName ="seqno" { 85143 =: MethodId } if
+MethodName ="pending_count" { 126687 =: MethodId } if
+MethodName ="param_n" { 107113 =: MethodId } if
+MethodName ="param_k" { 127692 =: MethodId } if
+MethodName ="owners" { 84885 =: MethodId } if
+MethodName ="pending" { 126129 =: MethodId } if
+MethodName ="pending_signed_by" { 75417 =: MethodId } if
 def? MethodId {
-  $2 (number) 1- abort"Calling methods by their names is not supported now, use its numeric id" =: MethodId
+  MethodName (number) 1- abort"Calling methods by their names is not supported now, use its numeric id" =: MethodId
 } ifnot
-$1 +".boc" file>B B>boc =: WalletData
+OldDataFile +".boc" file>B B>boc =: WalletData
 ."Data: " cr WalletData <s csr. cr
 
-$#
-dup 1- $() ="-C" {
-  dup $() +".fif" include =: WalletCode
-  2 -
-} {
-  // Import the actual smart contract code
-  "code-getters.fif" include =: WalletCode
-} cond
-
-3 { 2dup > } {
-  dup $() parse-int swap
-  1+
-} while 2drop
+Args @ { dup null? not } {
+  uncons swap parse-int swap
+} while drop
 
 MethodId WalletCode WalletData runvm()
 

@@ -70,7 +70,7 @@ If K is omitted, it is set to N. You can set the name of your new wallet. The pr
 After running this command you should get a '`<wallet>-init-query.boc`' file. Upload it to TON (using `sendfile <wallet>-init-query.boc`) in your client to initialise your wallet (of course, you need to transfer some Grams to its address first).
 
 ## Adding more keys to a wallet initialisation request
-`./add-keys.fif <wallet> <keyname-1> <keyname-2>... [-O <output-boc>] [-k <k>]`
+`./add-keys.fif <wallet> <keyname-1> <keyname-2>... [-O <output-boc>] [-K <k>]`
 
 Using this script you can add more owners **before initialisation of your smart contract**. You won't be able to change list of owners afterwards. Note that it will change the future address of the wallet (as it depends on the initial data). Private keys are loaded from (or stored to) files `<keyname-1>.pk`, `<keyname-2>.pk` and so on.
 
@@ -88,14 +88,14 @@ Option -B allows you to load custom message body for your future transfer.
 If you use option -E, your order will be valid only **for the next number of seconds you specified**. After that, it won't be completed even if missing signatures will arrive.
 
 ## Adding signatures to a newly created order
-`./sign-order.fif <query-boc> <keyname-1> <keyname-2>... [-O <output-boc>] [-s <seqno>]`
+`./sign-order.fif <query-boc> <keyname-1> <keyname-2>... [-O <output-boc>] [-S <seqno>]`
 
 Before uploading a new order, you can add more signatures to it using this script.
 
 If you're adding signatures to a previously uploaded order, you should update the seqno to the actual value using the -s option. Note that this won't work for newly created order - if you change the seqno, all signatures stored in it previously will become invalid.
 
 ## Sealing an order before upload
-`./seal-order.fif <query-boc> <keyname> [-O <output-boc>] [-s <seqno>]`
+`./seal-order.fif <query-boc> <keyname> [-O <output-boc>] [-S <seqno>]`
 
 This script can be used as a final preparation before uploading an order to the network. It will reduce the size of the prepared message (by about 768 bits). Note that you should upload it right after that (if you add new signatures to it, you will lose the one that was stripped away).
 
@@ -111,7 +111,7 @@ This script allows you to prepare a new request for such pending order. First, y
 After a request to update an existing order is created, it can be used exactly like the original one — you can add signatures with `sign-order.fif`, merge it with its copy (or the original order) with `merge-orders.fif`, seal it with `seal-order.fif` or inspect its contents with `show-order.fif`.
 
 ## Merging two copies of the same order
-`./merge-orders.fif <query1-boc> <query2-boc> <keyname> [-O <output-boc>] [-s <seqno>]`
+`./merge-orders.fif <query1-boc> <query2-boc> <keyname> [-O <output-boc>] [-S <seqno>]`
 
 If you happen to have two copies of the same order (signed by different parties), you can merge them together with this script. Of course, you need to be an owner to do that.
 

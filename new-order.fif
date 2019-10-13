@@ -1,46 +1,54 @@
 #!/usr/bin/env fift -s
 "multisig-utils.fif" include
 
-{ ."<wallet> <dest-addr> <seqno> <amount> <keyname-1> <keyname-2>... [-B <body-boc>] [-O <output-boc>] [-E <seconds>]" cr
+{ ."<wallet> <dest-addr> <seqno> <amount> <keyname-1> <keyname-2>... [-B <body-boc>] [-O <output-boc>] [-E <seconds>] [-b] [-M <send-mode>]" cr
   ."Creates a request to a multisig wallet created by multisig-init.fif, with address loaded from file <wallet>.addr "
   ."and private keys from <keyname-i>.pk, and saves it into <output-boc>.boc ('<wallet>-query.boc' by default)." cr
-  ."You can specify how many seconds this order will be alive after the -E flag. By default, it will live forever."
+  ."You can specify how many seconds this order will be alive after the -E flag. By default, it will live forever." cr
+  ."Switch -b disables bounce flag (enabled by default), and option -M allows to set send mode for future message."
 } : usage()
 
-5 1000 check-arg-count()
+// == Parsing command-line arguments
 
-true =: BounceFlag
-3 =: SendMode
+variable Keynames
+{
+  "-B" "--body-file" 1 { =: BodyFile } option-long()
+  "-O" "--output-file" 1 { =: SaveFile } option-long()
+  "-E" "--expires-after" 1 { parse-int now + =: ReqValidUntil } option-long()
+  "-M" "--send-mode" 1 { parse-int =: SendMode } option-long()
+  "-b" "--no-bounce" { false =: BounceFlag } switch-long()
 
-$1 =: BaseFile
-$2 BounceFlag parse-load-address =: BounceFlag 2=: DestAddr
-$3 parse-int =: SeqNo
-$4 $>GR =: Amount
+  1 { =: BaseFile } nth-argument()
+  2 { =: DestRaw } nth-argument()
+  3 { parse-int =: SeqNo } nth-argument()
+  4 { $>GR =: Amount } nth-argument()
+  {
+    Keynames @ cons Keynames !
+    drop
+  } other-argument()
+} scan-args()
+5 < { show-usage() } if // Checks that there's enough arguments
+
+// == End of parsing command-line arguments
+
+true =:? BounceFlag
+3 =:? SendMode
+DestRaw BounceFlag parse-load-address =: BounceFlag 2=: DestAddr
+BaseFile +"-query" =:? SaveFile
+
+def? BodyFile {
+  @' BodyFile +".boc" file>B B>boc
+} {
+  <b 0 32 u, "TEST" $, b>
+} cond =: TransferBody
 
 BaseFile +".addr" load-address
 2dup 2constant WalletAddr
 ."Source wallet address = " 2dup .addr cr 6 .Addr cr
 
-$#
-dup 1- $() ="-E" {
-  dup $() parse-int now + =: ReqValidUntil
-  2 -
-} if
-dup 1- $() ="-O" {
-  dup $() =: SaveFile
-  2 -
-} if
-dup 1- $() ="-B" {
-  dup $() =: BodyFile
-  2 -
-} if
-
 // Load keypairs specified in command line
-null swap
-{
-  dup 5 >=
-} { // keypairs i
-  dup $() +".pk" load-keypair
+null Keynames @ { dup null? not } { // keypairs keynames
+  uncons swap +".pk" load-keypair
   // keypairs i pubkey privkey
   def? PrimaryPublicKey {
     2dup
@@ -50,23 +58,10 @@ null swap
   swap
   3 roll
   cons cons
-  swap 1-
+  swap
 } while
 drop
 =: Keypairs
-
-PrimaryPrivateKey drop
-
-def? BodyFile {
-  @' BodyFile +".boc" file>B B>boc
-} {
-  <b 0 32 u, "TEST" $, b>
-} cond =: TransferBody
-
-def? SaveFile {
-  BaseFile +"-query" =: SaveFile
-} ifnot
-
 
 ."Creating new order to transfer " Amount .GR ."to account " DestAddr 2dup BounceFlag 7 + .Addr ." = " .addr 
 ."seqno=0x" SeqNo x. ."bounce=" BounceFlag . cr

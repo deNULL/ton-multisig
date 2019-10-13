@@ -6,11 +6,31 @@
   ."Use -k option to override the k param (minimal number of signatures required to complete an order)."
 } : usage()
 
-2 1000 check-arg-count()
+// == Parsing command-line arguments
 
-."Loading init message from " $1 +"-init-query.boc" type cr cr
+variable Keynames
+{
+  "-O" "--output-file" 1 { =: SaveFile } option-long()
+  "-K" 1 { parse-int =: NewK } option()
+  1 { =: BaseFile } nth-argument()
 
-$1 +"-init-query.boc" file>B B>boc parse-external-message()
+  {
+    Keynames @ cons Keynames !
+    drop
+  } other-argument()
+} scan-args()
+
+Keynames @ ~ drop cr
+
+2 < { // Checks that there's enough arguments
+  show-usage()
+} if
+
+// == End of parsing command-line arguments
+
+."Loading init message from " BaseFile +"-init-query.boc" type cr cr
+
+BaseFile +"-init-query.boc" file>B B>boc parse-external-message()
 drop =: OldStateInit drop =: WorkchainId
 
 // Update StateInit
@@ -18,20 +38,14 @@ OldStateInit untriple =: WalletLibs =: OldWalletData =: WalletCode
 
 OldWalletData parse-data() drop =: OldOwners =: OldK =: OldN drop drop
 
-// Generating list of owners
-$#
-dup 1- $() ="-k" {
-  dup $() parse-int =: NewK
-  2 -
-} if
-dup 1- $() ="-O" {
-  dup $() =: SaveFile
-  2 -
-} if
+// Default values
+BaseFile +"-init-query" =:? SaveFile
+OldK =:? NewK
 
-OldOwners OldN rot { dup 1 > } {
-  // owners_dict key_index arg_index
-  dup $() +".pk" load-generate-keypair
+// Generating list of owners
+OldOwners OldN Keynames @ { dup null? not } {
+  // owners_dict key_index keynames_list
+  uncons swap ~ +".pk" load-generate-keypair
   // owners_dict key_index arg_index pubkey privkey
   def? PrimaryPrivateKey {
     drop
@@ -48,24 +62,16 @@ OldOwners OldN rot { dup 1 > } {
   256 b>udict!
   0= abort"Unable to store public key in the contract data"
   // key_index arg_index owners_dict
-  rot 1+ rot 1-
+  rot 1+ rot
 } while
 drop // arg_index not needed
 =: NewN =: NewOwners
-
-def? NewK {
-  OldK =: NewK
-} ifnot
 
 0 0 NewN NewK NewOwners null data() =: NewWalletData
 ."WalletData: " NewWalletData <s csr. cr
 
 WalletCode NewWalletData WalletLibs state-init() =: StateInit
 ."StateInit: " StateInit <s csr. cr
-
-def? SaveFile {
-  $1 +"-init-query" =: SaveFile
-} ifnot
 
 WorkchainId StateInit hash 2constant WalletAddr
 ."Updated wallet address = " WalletAddr .addr cr

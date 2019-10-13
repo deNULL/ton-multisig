@@ -6,22 +6,27 @@
   ."Simulate sending an external message to multisig wallet."
 } : usage()
 
-2 3 check-arg-count()
+// == Parsing command-line arguments
 
-$1 +".boc" file>B B>boc =: OldWalletData
+{
+  "-C" "--code-file" 1 { +".fif" include =: WalletCode } option-long()
+
+  1 { =: OldDataFile } nth-argument()
+  2 { =: MessageFile } nth-argument()
+  3 { =: NewDataFile } nth-argument()
+  no-more-arguments()
+} scan-args()
+2 < { show-usage() } if // Checks that there's enough arguments
+
+// == End of parsing command-line arguments
+
+"code-getters.fif" include =:? WalletCode
+
+OldDataFile +".boc" file>B B>boc =: OldWalletData
 ."Old data: " cr OldWalletData <s csr. cr
-$2 +".boc" file>B B>boc 
+MessageFile +".boc" file>B B>boc 
 <s ref@ =: WalletMessage
 ."Message: " cr WalletMessage <s csr. cr
-
-$#
-dup 1- $() ="-C" {
-  dup $() +".fif" include =: WalletCode
-  2 -
-} {
-  // Import the actual smart contract code
-  "code-getters.fif" include =: WalletCode
-} cond
 
 WalletMessage <s recv_external WalletCode OldWalletData runvm()
 
@@ -31,6 +36,6 @@ WalletMessage <s recv_external WalletCode OldWalletData runvm()
 ."Exit code: " ExitCode . cr
 ."Updated data: " cr NewWalletData <s csr. cr
 
-def? $3 {
-  NewWalletData 2 boc+>B 3 $() +".boc" B>file
+def? NewDataFile {
+  NewWalletData 2 boc+>B NewDataFile +".boc" B>file
 } if
