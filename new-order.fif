@@ -1,10 +1,10 @@
 #!/usr/bin/env fift -s
 "multisig-utils.fif" include
 
-{ ."<wallet> <dest-addr> <seqno> <amount> <keyname-1> <keyname-2>... [-B <body-boc>] [-O <output-boc>] [-E <seconds>] [-b] [-M <send-mode>]" cr
+{ ."<wallet> <dest-addr> <seqno> <amount> <keyname-1> <keyname-2>... [-B <body-boc>] [-O <output-boc>] [-T <seconds>] [-b] [-M <send-mode>]" cr
   ."Creates a request to a multisig wallet created by multisig-init.fif, with address loaded from file <wallet>.addr "
   ."and private keys from <keyname-i>.pk, and saves it into <output-boc>.boc ('<wallet>-query.boc' by default)." cr
-  ."You can specify how many seconds this order will be alive after the -E flag. By default, it will live forever." cr
+  ."You can specify how many seconds this order will be alive after the -T flag. By default, it will live forever." cr
   ."Switch -b disables bounce flag (enabled by default), and option -M allows to set send mode for future message."
 } : usage()
 
@@ -14,7 +14,7 @@ variable Keynames
 {
   "-B" "--body-file" 1 { =: BodyFile } option-long()
   "-O" "--output-file" 1 { =: SaveFile } option-long()
-  "-E" "--expires-after" 1 { parse-int now + =: ReqValidUntil } option-long()
+  "-T" "--timeout" 1 { parse-int now + =: ReqValidUntil } option-long()
   "-M" "--send-mode" 1 { parse-int =: SendMode } option-long()
   "-b" "--no-bounce" { false =: BounceFlag } switch-long()
 
